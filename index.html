@@ -444,6 +444,124 @@
     border-color: var(--ink);
   }
 
+  /* ===== STYLE SWITCHER ===== */
+  .style-switcher {
+    position: absolute;
+    bottom: 80px;
+    right: 16px;
+    z-index: 500;
+  }
+
+  .style-toggle {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink);
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(10,22,40,0.12);
+    transition: all 0.18s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .style-toggle:hover {
+    background: var(--ink);
+    color: #fff;
+    border-color: var(--ink);
+    transform: translateY(-1px);
+  }
+
+  .style-panel {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    right: 0;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: 0 12px 32px rgba(10,22,40,0.18);
+    padding: 14px;
+    min-width: 280px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px) scale(0.96);
+    transform-origin: bottom right;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .style-switcher.open .style-panel {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+  }
+
+  .style-panel-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-soft);
+    margin-bottom: 10px;
+    font-weight: 700;
+    padding: 0 4px;
+  }
+
+  .style-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .style-btn {
+    background: var(--paper);
+    border: 1.5px solid transparent;
+    border-radius: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    text-align: left;
+    font-family: inherit;
+  }
+
+  .style-btn:hover {
+    background: var(--accent-soft);
+    transform: translateY(-1px);
+  }
+
+  .style-btn.active {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: #fff;
+  }
+
+  .style-btn.active .style-desc {
+    color: rgba(255,255,255,0.6);
+  }
+
+  .style-icon {
+    font-size: 18px;
+    margin-bottom: 2px;
+  }
+
+  .style-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: inherit;
+  }
+
+  .style-desc {
+    font-size: 10px;
+    color: var(--ink-soft);
+    opacity: 0.8;
+  }
+
   /* Custom Leaflet popup */
   .leaflet-popup-content-wrapper {
     border-radius: 12px;
@@ -639,6 +757,53 @@
       มุมมองเริ่มต้น
     </button>
   </div>
+
+  <!-- Style switcher -->
+  <div class="style-switcher" id="styleSwitcher">
+    <button class="style-toggle" id="styleToggle" title="เปลี่ยนรูปแบบแผนที่">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="12 2 2 7 12 12 22 7 12 2"/>
+        <polyline points="2 17 12 22 22 17"/>
+        <polyline points="2 12 12 17 22 12"/>
+      </svg>
+      <span>รูปแบบแผนที่</span>
+    </button>
+    <div class="style-panel" id="stylePanel">
+      <div class="style-panel-title">เลือกรูปแบบแผนที่</div>
+      <div class="style-grid">
+        <button class="style-btn active" data-style="street">
+          <span class="style-icon">🗺️</span>
+          <span class="style-label">แผนที่ถนน</span>
+          <span class="style-desc">มาตรฐาน</span>
+        </button>
+        <button class="style-btn" data-style="satellite">
+          <span class="style-icon">🛰️</span>
+          <span class="style-label">ดาวเทียม</span>
+          <span class="style-desc">ภาพถ่ายจริง</span>
+        </button>
+        <button class="style-btn" data-style="hybrid">
+          <span class="style-icon">🌍</span>
+          <span class="style-label">ดาวเทียม+ถนน</span>
+          <span class="style-desc">ภาพ + ป้าย</span>
+        </button>
+        <button class="style-btn" data-style="terrain">
+          <span class="style-icon">⛰️</span>
+          <span class="style-label">ภูมิประเทศ</span>
+          <span class="style-desc">ความสูงต่ำ</span>
+        </button>
+        <button class="style-btn" data-style="light">
+          <span class="style-icon">☀️</span>
+          <span class="style-label">มินิมอล</span>
+          <span class="style-desc">พื้นเรียบ ขาว</span>
+        </button>
+        <button class="style-btn" data-style="dark">
+          <span class="style-icon">🌙</span>
+          <span class="style-label">โหมดมืด</span>
+          <span class="style-desc">กลางคืน</span>
+        </button>
+      </div>
+    </div>
+  </div>
 </main>
 
 <script>
@@ -776,55 +941,147 @@ const map = L.map('map', {
 
 L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-// Tile layer with smart fallback (timeout-based)
-const tileServers = [
-  {
-    name: 'ESRI World Street Map',
-    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-    attribution: 'Tiles &copy; Esri',
-    maxZoom: 19
+// ============ MAP STYLES ============
+// แต่ละสไตล์มี multiple providers (auto-fallback ในตัว)
+const MAP_STYLES = {
+  street: {
+    label: 'แผนที่ถนน',
+    icon: '🗺️',
+    description: 'มาตรฐาน',
+    providers: [
+      {
+        name: 'Google Street',
+        url: 'https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
+        subdomains: '0123', maxZoom: 20,
+        attribution: '&copy; Google'
+      },
+      {
+        name: 'ESRI Street',
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+        maxZoom: 19, attribution: 'Tiles &copy; Esri'
+      },
+      {
+        name: 'OpenStreetMap',
+        url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+        maxZoom: 19, attribution: '&copy; OpenStreetMap'
+      }
+    ]
   },
-  {
-    name: 'OpenStreetMap',
-    url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-    attribution: '&copy; OpenStreetMap contributors',
-    maxZoom: 19
+  satellite: {
+    label: 'ดาวเทียม',
+    icon: '🛰️',
+    description: 'ภาพถ่ายจริง',
+    providers: [
+      {
+        name: 'Google Satellite',
+        url: 'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+        subdomains: '0123', maxZoom: 20,
+        attribution: '&copy; Google'
+      },
+      {
+        name: 'ESRI Satellite',
+        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        maxZoom: 19, attribution: 'Tiles &copy; Esri'
+      }
+    ]
   },
-  {
-    name: 'Google Maps tiles',
-    url: 'https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
-    attribution: '&copy; Google',
-    subdomains: '0123',
-    maxZoom: 20
+  hybrid: {
+    label: 'ดาวเทียม + ถนน',
+    icon: '🌍',
+    description: 'ภาพถ่าย + ป้ายถนน',
+    providers: [
+      {
+        name: 'Google Hybrid',
+        url: 'https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+        subdomains: '0123', maxZoom: 20,
+        attribution: '&copy; Google'
+      }
+    ]
   },
-  {
-    name: 'CARTO Voyager',
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-    attribution: '&copy; OpenStreetMap &copy; CARTO',
-    subdomains: 'abcd',
-    maxZoom: 19
+  terrain: {
+    label: 'ภูมิประเทศ',
+    icon: '⛰️',
+    description: 'ความสูงต่ำของพื้นที่',
+    providers: [
+      {
+        name: 'Google Terrain',
+        url: 'https://mt{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',
+        subdomains: '0123', maxZoom: 20,
+        attribution: '&copy; Google'
+      },
+      {
+        name: 'OpenTopoMap',
+        url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+        subdomains: 'abc', maxZoom: 17,
+        attribution: '&copy; OpenTopoMap'
+      }
+    ]
+  },
+  light: {
+    label: 'สว่าง มินิมอล',
+    icon: '☀️',
+    description: 'พื้นหลังเรียบ ขาว',
+    providers: [
+      {
+        name: 'CARTO Positron',
+        url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+        subdomains: 'abcd', maxZoom: 19,
+        attribution: '&copy; CARTO'
+      }
+    ]
+  },
+  dark: {
+    label: 'มืด',
+    icon: '🌙',
+    description: 'โหมดกลางคืน',
+    providers: [
+      {
+        name: 'CARTO Dark Matter',
+        url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+        subdomains: 'abcd', maxZoom: 19,
+        attribution: '&copy; CARTO'
+      }
+    ]
   }
-];
+};
 
+let currentStyleKey = 'street';
 let activeTileLayer = null;
-let tileServerIdx = 0;
 let tileCheckTimer = null;
-let allTilesFailed = false;
+let providerIdx = 0;
+let allFailedThisStyle = false;
 
-function tryTileServer(idx) {
-  if (idx >= tileServers.length) {
-    if (!allTilesFailed) {
-      allTilesFailed = true;
-      console.error('All tile servers failed - switching to Google Maps fallback');
+function loadMapStyle(styleKey) {
+  currentStyleKey = styleKey;
+  providerIdx = 0;
+  allFailedThisStyle = false;
+  // Reset Google Maps fallback ถ้ามี
+  const fallbackEl = document.getElementById('gmaps-fallback');
+  if (fallbackEl) fallbackEl.remove();
+  document.getElementById('map').style.display = '';
+  window.__useGmapsFallback = false;
+  map.invalidateSize();
+
+  tryProvider(0);
+  updateStyleSwitcherUI();
+}
+
+function tryProvider(idx) {
+  const style = MAP_STYLES[currentStyleKey];
+  if (idx >= style.providers.length) {
+    if (!allFailedThisStyle) {
+      allFailedThisStyle = true;
+      console.error('Style "' + currentStyleKey + '" – all providers failed, using Google Maps embed');
       switchToGoogleMapsFallback();
     }
     return;
   }
-  const cfg = tileServers[idx];
-  console.log('🗺️ Trying tile server #' + (idx+1) + ': ' + cfg.name);
+  const cfg = style.providers[idx];
+  console.log('🗺️ [' + style.label + '] Trying provider #' + (idx+1) + ': ' + cfg.name);
 
   if (activeTileLayer) {
     map.removeLayer(activeTileLayer);
+    activeTileLayer = null;
   }
 
   const layer = L.tileLayer(cfg.url, {
@@ -833,41 +1090,45 @@ function tryTileServer(idx) {
     maxZoom: cfg.maxZoom
   });
 
-  let loadedCount = 0;
-  let errorCount = 0;
-  let succeeded = false;
+  let loadedCount = 0, errorCount = 0, succeeded = false;
 
   layer.on('tileload', () => {
     loadedCount++;
     if (loadedCount >= 1 && !succeeded) {
       succeeded = true;
       clearTimeout(tileCheckTimer);
-      console.log('✅ Tile server #' + (idx+1) + ' (' + cfg.name + ') loaded successfully');
+      console.log('✅ [' + style.label + '] ' + cfg.name + ' loaded');
     }
   });
 
   layer.on('tileerror', () => {
     errorCount++;
     if (errorCount >= 4 && !succeeded && activeTileLayer === layer) {
-      console.warn('❌ Tile server #' + (idx+1) + ' failed, trying next...');
+      console.warn('❌ ' + cfg.name + ' failed, trying next...');
       clearTimeout(tileCheckTimer);
-      activeTileLayer = null; // Stop counting more errors from this layer
+      activeTileLayer = null;
       map.removeLayer(layer);
-      tryTileServer(idx + 1);
+      tryProvider(idx + 1);
     }
   });
 
   tileCheckTimer = setTimeout(() => {
     if (!succeeded && activeTileLayer === layer) {
-      console.warn('⏱️ Tile server #' + (idx+1) + ' timeout, trying next...');
+      console.warn('⏱️ ' + cfg.name + ' timeout, trying next...');
       activeTileLayer = null;
       map.removeLayer(layer);
-      tryTileServer(idx + 1);
+      tryProvider(idx + 1);
     }
   }, 5000);
 
   layer.addTo(map);
   activeTileLayer = layer;
+}
+
+function updateStyleSwitcherUI() {
+  document.querySelectorAll('.style-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.style === currentStyleKey);
+  });
 }
 
 // Ultimate fallback: ถ้า tile ทุกตัว block หมด ใช้ Google Maps embed iframe แทน
@@ -902,7 +1163,7 @@ function switchToGoogleMapsFallback() {
   window.__useGmapsFallback = true;
 }
 
-tryTileServer(0);
+loadMapStyle('street');
 
 // Custom pin maker
 function makePin(color, isActive = false) {
@@ -1153,6 +1414,30 @@ document.getElementById('resetView').addEventListener('click', () => {
   renderChips();
   renderList();
   applyFilter();
+});
+
+// Style switcher
+const styleSwitcher = document.getElementById('styleSwitcher');
+const styleToggle = document.getElementById('styleToggle');
+
+styleToggle.addEventListener('click', (e) => {
+  e.stopPropagation();
+  styleSwitcher.classList.toggle('open');
+});
+
+document.addEventListener('click', (e) => {
+  if (!styleSwitcher.contains(e.target)) {
+    styleSwitcher.classList.remove('open');
+  }
+});
+
+document.querySelectorAll('.style-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const styleKey = btn.dataset.style;
+    if (styleKey === currentStyleKey) return;
+    loadMapStyle(styleKey);
+    setTimeout(() => styleSwitcher.classList.remove('open'), 200);
+  });
 });
 
 // ============ INIT ============
