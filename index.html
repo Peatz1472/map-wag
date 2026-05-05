@@ -2,865 +2,1198 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Wash&Go — แผนที่สาขา</title>
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-<link rel="stylesheet" id="leaflet-css" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0E0E10">
+<title>Wash&Go · CS Branch Finder</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
 <style>
   :root {
-    --ink: #0a1628;
-    --ink-soft: #2a3a52;
-    --paper: #f4f6f8;
-    --paper-warm: #eaeef2;
-    --accent: #00a3ff;
-    --accent-deep: #0070c9;
-    --accent-soft: #e3f2fd;
-    --gold: #f5a623;
-    --line: #d8dee6;
-    --line-soft: #e8ecf1;
-
-    /* Zone colors */
-    --zone-north: #2563eb;     /* น้ำเงิน */
-    --zone-east: #dc2626;      /* แดง */
-    --zone-west: #16a34a;      /* เขียว */
-    --zone-south-bkk: #9333ea; /* ม่วง */
-    --zone-pattaya: #ea580c;   /* ส้ม */
-    --zone-south: #0891b2;     /* ฟ้าน้ำทะเล */
-    --zone-isan: #ca8a04;      /* ทอง */
+    --yellow: #FFC400;
+    --yellow-deep: #FFB300;
+    --yellow-soft: #FFF4C4;
+    --yellow-tint: #FFFAE6;
+    --orange: #FF6B1A;
+    --orange-deep: #E04E00;
+    --orange-soft: #FFE4D2;
+    --ink: #0E0E10;
+    --ink-2: #1C1C20;
+    --ink-3: #2A2A30;
+    --slate: #6B6B75;
+    --slate-soft: #A0A0AA;
+    --line: #E8E8EA;
+    --line-soft: #F1F1F3;
+    --paper: #FAFAF7;
+    --white: #FFFFFF;
+    --shadow: 0 8px 24px rgba(14,14,16,0.08);
+    --shadow-lg: 0 16px 48px rgba(14,14,16,0.16);
+    --radius: 12px;
+    --font-display: 'Plus Jakarta Sans', 'IBM Plex Sans Thai', sans-serif;
+    --font-body: 'IBM Plex Sans Thai', 'Plus Jakarta Sans', sans-serif;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --sidebar-w: 340px;
   }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   html, body {
     height: 100%;
-    font-family: 'IBM Plex Sans Thai', sans-serif;
-    color: var(--ink);
-    background: var(--paper);
     overflow: hidden;
+    font-family: var(--font-body);
+    background: var(--paper);
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior: none;
   }
 
-  body {
+  button { font-family: inherit; cursor: pointer; border: none; background: none; -webkit-tap-highlight-color: transparent; }
+  input { font-family: inherit; -webkit-appearance: none; }
+
+  /* ===== APP LAYOUT — DESKTOP DEFAULT ===== */
+  .app {
     display: grid;
-    grid-template-columns: 360px 1fr;
+    grid-template-columns: var(--sidebar-w) 1fr;
     height: 100vh;
+    height: 100dvh;
   }
 
-  /* ===== SIDEBAR ===== */
-  aside {
-    background: #fff;
+  /* Force sidebar to LEFT column, map to RIGHT column regardless of DOM order */
+  .sidebar { grid-column: 1; grid-row: 1; }
+  .map-wrap { grid-column: 2; grid-row: 1; }
+
+  .sidebar {
+    background: var(--white);
     border-right: 1px solid var(--line);
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    position: relative;
-    z-index: 10;
-  }
-
-  .brand {
-    padding: 24px 24px 18px;
-    border-bottom: 1px solid var(--line-soft);
-    background: linear-gradient(135deg, #0a1628 0%, #1a3a5c 100%);
-    color: #fff;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .brand::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(circle at 90% 20%, rgba(0,163,255,0.25), transparent 60%);
-    pointer-events: none;
-  }
-
-  .brand-mark {
-    display: flex;
-    align-items: baseline;
-    gap: 4px;
-    font-family: 'Bricolage Grotesque', sans-serif;
-    font-weight: 800;
-    font-size: 28px;
-    letter-spacing: -0.02em;
-    line-height: 1;
-    position: relative;
-  }
-
-  .brand-mark .amp {
-    color: var(--accent);
-    font-weight: 500;
-    font-style: italic;
-  }
-
-  .brand-mark .dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--gold);
-    margin-left: 2px;
-    align-self: end;
-    margin-bottom: 6px;
-  }
-
-  .brand-tag {
-    font-size: 12px;
-    margin-top: 6px;
-    color: rgba(255,255,255,0.65);
-    letter-spacing: 0.02em;
-    position: relative;
-  }
-
-  .brand-stats {
-    margin-top: 14px;
-    display: flex;
-    gap: 16px;
-    font-size: 11px;
-    color: rgba(255,255,255,0.7);
-    position: relative;
-  }
-
-  .brand-stats strong {
-    color: #fff;
-    font-family: 'Bricolage Grotesque', sans-serif;
-    font-size: 18px;
-    font-weight: 700;
-    display: block;
-    margin-bottom: 1px;
-  }
-
-  /* Search */
-  .search-wrap {
-    padding: 14px 16px;
-    border-bottom: 1px solid var(--line-soft);
-    background: #fff;
-  }
-
-  .search {
-    position: relative;
-  }
-
-  .search input {
-    width: 100%;
-    padding: 11px 14px 11px 38px;
-    border: 1.5px solid var(--line);
-    border-radius: 10px;
-    font-family: inherit;
-    font-size: 13px;
-    background: var(--paper);
-    color: var(--ink);
-    transition: all 0.15s ease;
-  }
-
-  .search input:focus {
-    outline: none;
-    border-color: var(--accent);
-    background: #fff;
-    box-shadow: 0 0 0 3px rgba(0,163,255,0.1);
-  }
-
-  .search svg {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--ink-soft);
-    opacity: 0.5;
-  }
-
-  /* Zone filters */
-  .zones {
-    padding: 14px 16px 8px;
-    border-bottom: 1px solid var(--line-soft);
-  }
-
-  .zones-title {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--ink-soft);
-    margin-bottom: 10px;
-    font-weight: 600;
-  }
-
-  .zone-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .chip {
-    border: 1.5px solid var(--line);
-    background: #fff;
-    padding: 6px 11px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-family: inherit;
-    color: var(--ink);
-    cursor: pointer;
-    transition: all 0.15s ease;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-weight: 500;
-  }
-
-  .chip:hover {
-    border-color: var(--ink-soft);
-    transform: translateY(-1px);
-  }
-
-  .chip .dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--zone-color, var(--accent));
-  }
-
-  .chip.active {
-    background: var(--ink);
-    border-color: var(--ink);
-    color: #fff;
-  }
-
-  .chip[data-zone="all"].active {
-    background: var(--accent-deep);
-    border-color: var(--accent-deep);
-  }
-
-  /* Branch list */
-  .list {
-    flex: 1;
-    overflow-y: auto;
-    padding: 8px 0;
-  }
-
-  .list::-webkit-scrollbar {
-    width: 6px;
-  }
-  .list::-webkit-scrollbar-thumb {
-    background: var(--line);
-    border-radius: 3px;
-  }
-
-  .zone-group {
-    padding: 12px 16px 4px;
-  }
-
-  .zone-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--ink-soft);
-    margin-bottom: 8px;
-    padding-bottom: 6px;
-    border-bottom: 1px dashed var(--line);
-  }
-
-  .zone-header .bar {
-    width: 3px;
-    height: 14px;
-    background: var(--zone-color);
-    border-radius: 2px;
-  }
-
-  .zone-count {
-    margin-left: auto;
-    font-family: 'Bricolage Grotesque', sans-serif;
-    background: var(--paper);
-    padding: 2px 8px;
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--ink);
-  }
-
-  .branch {
-    padding: 10px 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background 0.12s;
-    display: flex;
-    gap: 10px;
-    align-items: flex-start;
-    margin-bottom: 2px;
-  }
-
-  .branch:hover {
-    background: var(--paper);
-  }
-
-  .branch.active {
-    background: var(--accent-soft);
-  }
-
-  .branch-pin {
-    width: 24px;
-    height: 24px;
-    flex-shrink: 0;
-    margin-top: 2px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .branch-pin svg {
-    width: 100%;
-    height: 100%;
-  }
-
-  .branch-body {
-    flex: 1;
     min-width: 0;
   }
 
-  .branch-name {
-    font-size: 13px;
-    font-weight: 500;
-    line-height: 1.35;
-    color: var(--ink);
-    word-break: break-word;
-  }
-
-  .branch-meta {
-    font-size: 11px;
-    color: var(--ink-soft);
-    margin-top: 3px;
-    opacity: 0.75;
-    line-height: 1.5;
-  }
-
-  .branch-actions {
-    display: flex;
-    gap: 6px;
-    margin-top: 8px;
-    max-height: 0;
+  /* ===== Brand Header (COMPACT) ===== */
+  .brand {
+    background: var(--ink);
+    color: var(--white);
+    padding: 9px 12px;
+    position: relative;
     overflow: hidden;
-    opacity: 0;
-    transition: max-height 0.25s ease, opacity 0.2s ease, margin-top 0.25s;
+    flex-shrink: 0;
   }
-
-  .branch.active .branch-actions,
-  .branch:hover .branch-actions {
-    max-height: 40px;
-    opacity: 1;
+  .brand::before {
+    content: '';
+    position: absolute;
+    top: -30px; right: -30px;
+    width: 80px; height: 80px;
+    background: var(--yellow);
+    border-radius: 50%;
+    opacity: 0.1;
   }
-
-  .branch-btn {
-    flex: 1;
-    text-decoration: none;
+  .brand::after {
+    content: '';
+    position: absolute;
+    top: 14px; right: 24px;
+    width: 30px; height: 30px;
+    background: var(--orange);
+    border-radius: 50%;
+    opacity: 0.18;
+  }
+  .brand-row { display: flex; align-items: center; gap: 10px; position: relative; z-index: 1; }
+  .brand-logo {
+    width: 32px; height: 32px;
+    background: var(--yellow);
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    color: var(--ink);
+    font-family: var(--font-display);
+    font-size: 16px;
+    box-shadow: 0 3px 10px rgba(255,196,0,0.3);
+    flex-shrink: 0;
+  }
+  .brand-text { flex: 1; min-width: 0; }
+  .brand-name {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 15px;
+    letter-spacing: -0.01em;
+    line-height: 1;
+  }
+  .brand-name .accent { color: var(--yellow); }
+  .brand-sub {
+    font-size: 10px;
+    color: var(--slate-soft);
+    margin-top: 3px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .brand-sub .dot {
+    width: 5px; height: 5px;
+    background: #4ADE80;
+    border-radius: 50%;
+    box-shadow: 0 0 6px #4ADE80;
+  }
+  .brand-stats-inline {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+  }
+  /* Hide stats on narrow sidebar to give space to mode toggle */
+  @media (max-width: 1100px) {
+    .brand-stats-inline { display: none; }
+  }
+  body.force-mobile .brand-stats-inline { display: none; }
+  .brand-stat-mini {
     text-align: center;
-    padding: 6px 8px;
+  }
+  .brand-stat-mini .num {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 16px;
+    color: var(--yellow);
+    line-height: 1;
+  }
+  .brand-stat-mini .lbl {
+    font-size: 9px;
+    color: var(--slate-soft);
+    margin-top: 2px;
+    letter-spacing: 0.04em;
+  }
+
+  /* Mode toggle — top right */
+  .mode-toggle {
+    position: relative;
+    z-index: 2;
+    background: var(--ink-2);
+    border: 1px solid var(--ink-3);
+    border-radius: 8px;
+    padding: 3px;
+    display: flex;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+  .mode-btn {
+    color: var(--slate-soft);
+    padding: 4px 8px;
     border-radius: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    font-family: var(--font-display);
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .mode-btn:hover { color: var(--white); }
+  .mode-btn.active {
+    background: var(--yellow);
+    color: var(--ink);
+  }
+  .mode-btn svg { display: block; }
+
+  /* ===== Hero Finder (COMPACT) ===== */
+  .finder {
+    padding: 9px 12px 10px;
+    background: linear-gradient(180deg, var(--yellow-tint) 0%, var(--white) 100%);
+    border-bottom: 1px solid var(--line);
+    flex-shrink: 0;
+  }
+  .finder-label { display: flex; align-items: center; gap: 6px; margin-bottom: 7px; }
+  .finder-label-icon {
+    width: 22px; height: 22px;
+    background: var(--ink);
+    color: var(--yellow);
+    border-radius: 6px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+  }
+  .finder-label-text {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--ink);
+  }
+  .finder-label-tag {
+    margin-left: auto;
+    font-size: 9px;
+    background: var(--ink);
+    color: var(--yellow);
+    padding: 2px 7px;
+    border-radius: 100px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+  .finder-input-wrap {
+    background: var(--white);
+    border: 1.5px solid var(--ink);
+    border-radius: 10px;
+    padding: 3px;
+    display: flex;
+    align-items: center;
+    box-shadow: 3px 3px 0 var(--ink);
+    transition: box-shadow 0.15s;
+  }
+  .finder-input-wrap:focus-within { box-shadow: 3px 3px 0 var(--orange); }
+  .finder-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    padding: 7px 11px;
+    font-size: 14px;
+    background: transparent;
+    color: var(--ink);
+    min-width: 0;
+  }
+  .finder-input::placeholder { color: var(--slate-soft); font-size: 13px; }
+  .finder-gps {
+    background: var(--ink);
+    color: var(--yellow);
+    border-radius: 7px;
+    padding: 7px 10px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    transition: all 0.15s;
+    flex-shrink: 0;
+    min-height: 32px;
+  }
+  .finder-gps:hover { background: var(--orange); color: var(--white); }
+  .finder-gps:active { transform: scale(0.96); }
+  .finder-gps.loading { opacity: 0.6; cursor: wait; }
+  .finder-quick { margin-top: 8px; }
+  .finder-quick-row { display: flex; flex-wrap: wrap; gap: 4px; }
+  .quick-chip {
+    background: var(--white);
+    border: 1px solid var(--ink);
+    color: var(--ink);
+    padding: 4px 10px;
+    border-radius: 100px;
     font-size: 11px;
     font-weight: 600;
+    transition: all 0.12s;
+    min-height: 26px;
+  }
+  .quick-chip:hover { background: var(--yellow); transform: translateY(-1px); }
+  .quick-chip:active { transform: scale(0.96); }
+
+  /* ===== ZONE BAR (COMPACT) ===== */
+  .zone-bar {
+    background: var(--ink);
+    padding: 6px 10px;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .zone-bar-scroll {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 2px 2px;
+    scroll-snap-type: x proximity;
+  }
+  .zone-bar-scroll::-webkit-scrollbar { display: none; }
+  .zone-tab {
+    background: var(--ink-2);
+    border: 1px solid var(--ink-3);
+    color: var(--slate-soft);
+    padding: 5px 10px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
     transition: all 0.15s;
+    scroll-snap-align: start;
+    min-height: 28px;
+    font-family: var(--font-display);
+  }
+  .zone-tab:hover { border-color: var(--yellow); color: var(--white); }
+  .zone-tab:active { transform: scale(0.95); }
+  .zone-tab.active {
+    background: var(--yellow);
+    border-color: var(--yellow);
+    color: var(--ink);
+    box-shadow: 0 2px 8px rgba(255,196,0,0.4);
+  }
+  .zone-tab .zone-emoji { font-size: 12px; }
+  .zone-tab .zone-count {
+    background: var(--ink);
+    color: var(--yellow);
+    padding: 0 5px;
+    border-radius: 100px;
+    font-size: 9px;
+    font-weight: 800;
+    min-width: 16px;
+    text-align: center;
+    line-height: 14px;
+  }
+
+  /* ===== CONTEXT BAR (COMPACT) ===== */
+  .context-bar {
+    padding: 7px 12px;
+    background: var(--orange);
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    flex-shrink: 0;
+  }
+  .context-bar.hidden { display: none; }
+  .context-bar .ctx-icon {
+    background: var(--white);
+    color: var(--orange);
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    display: grid;
+    place-items: center;
+    font-size: 11px;
+    flex-shrink: 0;
+  }
+  .context-bar .ctx-text { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; }
+  .context-bar .ctx-label {
+    font-size: 10px;
+    opacity: 0.85;
+    font-weight: 600;
+  }
+  .context-bar .ctx-value {
+    font-weight: 800;
+    font-family: var(--font-display);
+    font-size: 12px;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .context-bar .clear {
+    background: rgba(0,0,0,0.25);
+    color: var(--white);
+    font-size: 10px;
+    padding: 4px 9px;
+    border-radius: 6px;
+    font-weight: 700;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .context-bar .clear:hover { background: var(--ink); }
+  .context-bar .clear:active { transform: scale(0.94); }
+
+  /* ===== NEARBY AREAS (COMPACT) ===== */
+  .nearby-bar {
+    background: var(--yellow-tint);
+    border-bottom: 1px solid var(--line);
+    padding: 6px 10px 7px;
+    flex-shrink: 0;
+  }
+  .nearby-bar.hidden { display: none; }
+  .nearby-bar-label {
+    color: var(--slate);
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 700;
+    padding: 0 4px 4px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .nearby-bar-label .ico {
+    background: var(--orange);
+    color: var(--white);
+    width: 14px; height: 14px;
+    border-radius: 4px;
+    display: grid;
+    place-items: center;
+    font-size: 9px;
+  }
+  .nearby-scroll {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 2px 2px;
+  }
+  .nearby-scroll::-webkit-scrollbar { display: none; }
+  .nearby-chip {
+    background: var(--white);
+    border: 1px solid var(--ink);
+    color: var(--ink);
+    padding: 4px 9px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s;
+    min-height: 26px;
+  }
+  .nearby-chip:hover { background: var(--yellow); transform: translateY(-1px); }
+  .nearby-chip:active { transform: scale(0.95); }
+  .nearby-chip .nearby-dist {
+    background: var(--ink);
+    color: var(--yellow);
+    font-size: 9px;
+    padding: 0 5px;
+    border-radius: 100px;
+    font-weight: 700;
+    line-height: 14px;
+  }
+
+  /* ===== LIST HEADER (COMPACT) ===== */
+  .list-header {
+    padding: 7px 12px 5px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .list-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 11px;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .list-count {
+    background: var(--yellow);
+    color: var(--ink);
+    padding: 1px 7px;
+    border-radius: 100px;
+    font-size: 10px;
+    font-weight: 800;
+  }
+  .list-sort-info { font-size: 10px; color: var(--slate); font-weight: 500; }
+
+  .list { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 2px 8px 12px; min-height: 0; }
+  .list::-webkit-scrollbar { width: 6px; }
+  .list::-webkit-scrollbar-track { background: transparent; }
+  .list::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+  .list::-webkit-scrollbar-thumb:hover { background: var(--slate-soft); }
+
+  /* ===== CARD (COMPACT) ===== */
+  .card {
+    background: var(--white);
+    border: 1.5px solid var(--line);
+    border-radius: var(--radius);
+    padding: 9px 11px;
+    margin-bottom: 5px;
+    cursor: pointer;
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .card:hover { border-color: var(--ink); transform: translateY(-1px); box-shadow: var(--shadow); }
+  .card:active { transform: scale(0.99); }
+  .card.active { border-color: var(--ink); background: var(--yellow-tint); box-shadow: 3px 3px 0 var(--ink); }
+  .card.nearest {
+    border-color: var(--orange);
+    background: linear-gradient(135deg, var(--white) 0%, var(--orange-soft) 100%);
+  }
+  .card-top { display: flex; align-items: flex-start; gap: 8px; }
+  .card-rank {
+    flex-shrink: 0;
+    width: 26px; height: 26px;
+    background: var(--ink);
+    color: var(--yellow);
+    border-radius: 7px;
+    display: grid;
+    place-items: center;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 11px;
+  }
+  .card.nearest .card-rank {
+    background: var(--orange);
+    color: var(--white);
+    box-shadow: 0 3px 10px rgba(255,107,26,0.4);
+  }
+  .card-body { flex: 1; min-width: 0; }
+  .card-name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--ink);
+    line-height: 1.25;
+    margin-bottom: 2px;
+  }
+  .card-landmark { font-size: 11px; color: var(--slate); line-height: 1.4; }
+  .card-meta {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 7px;
+    flex-wrap: wrap;
+  }
+  .card-zone {
+    font-size: 9px;
+    background: var(--line-soft);
+    color: var(--slate);
+    padding: 2px 7px;
+    border-radius: 100px;
+    font-weight: 600;
+  }
+  .card-distance {
+    font-size: 10px;
+    color: var(--orange-deep);
+    font-weight: 700;
+  }
+  .nearest-badge {
+    font-size: 9px;
+    background: var(--orange);
+    color: var(--white);
+    padding: 2px 7px;
+    border-radius: 100px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+  }
+  .card-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 4px;
+    margin-top: 7px;
+  }
+  .card-action {
+    background: var(--white);
+    border: 1px solid var(--line);
+    color: var(--slate);
+    padding: 5px 4px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    transition: all 0.12s;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    font-family: inherit;
+    gap: 3px;
+    text-decoration: none;
+    min-height: 26px;
   }
+  .card-action:hover { border-color: var(--ink); background: var(--yellow); color: var(--ink); }
+  .card-action:active { transform: scale(0.95); }
 
-  .branch-btn.google {
-    background: var(--accent-deep);
-    color: #fff;
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--slate); }
+  .empty-icon {
+    width: 56px; height: 56px;
+    background: var(--yellow-soft);
+    border-radius: 50%;
+    margin: 0 auto 12px;
+    display: grid;
+    place-items: center;
+    font-size: 24px;
   }
-
-  .branch-btn.google:hover {
-    background: var(--ink);
-  }
-
-  .branch-btn.apple {
-    background: #fff;
+  .empty-title {
+    font-family: var(--font-display);
+    font-weight: 700;
     color: var(--ink);
-    border: 1px solid var(--line);
+    font-size: 14px;
+    margin-bottom: 6px;
   }
-
-  .branch-btn.apple:hover {
-    background: var(--ink);
-    color: #fff;
-    border-color: var(--ink);
-  }
-
-  .empty {
-    padding: 40px 20px;
-    text-align: center;
-    color: var(--ink-soft);
-    font-size: 13px;
-    opacity: 0.6;
-  }
+  .empty-text { font-size: 12px; line-height: 1.5; }
 
   /* ===== MAP ===== */
-  main {
-    position: relative;
-    background: var(--paper-warm);
-  }
-
+  .map-wrap { position: relative; background: #DDD; }
   #map {
-    height: 100%;
     width: 100%;
-    background: #dde4eb;
+    height: 100%;
+    background: #DDD;
+    -webkit-tap-highlight-color: transparent;
   }
+  .leaflet-tile-container img { opacity: 1 !important; }
+  .leaflet-tile { will-change: transform; }
 
-  /* Floating header on map */
-  .map-overlay {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    z-index: 500;
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-
-  .map-btn {
-    background: #fff;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 8px 14px;
-    font-family: inherit;
-    font-size: 12px;
-    font-weight: 500;
+  .map-controls { position: absolute; top: 14px; right: 14px; z-index: 600; display: flex; gap: 6px; }
+  .map-ctrl {
+    background: var(--white);
+    border: 1.5px solid var(--ink);
     color: var(--ink);
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(10,22,40,0.08);
-    transition: all 0.15s;
+    padding: 7px 11px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    box-shadow: 2px 2px 0 var(--ink);
+    transition: all 0.12s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 32px;
+  }
+  .map-ctrl:hover { background: var(--yellow); transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--ink); }
+  .map-ctrl:active { transform: scale(0.96); }
+
+  .style-switcher { position: absolute; bottom: 70px; right: 14px; z-index: 500; }
+  .style-toggle {
+    background: var(--white);
+    border: 1.5px solid var(--ink);
+    color: var(--ink);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    box-shadow: 2px 2px 0 var(--ink);
+    transition: all 0.12s;
     display: flex;
     align-items: center;
     gap: 6px;
+    min-height: 34px;
   }
-
-  .map-btn:hover {
-    background: var(--ink);
-    color: #fff;
-    border-color: var(--ink);
-  }
-
-  /* ===== STYLE SWITCHER ===== */
-  .style-switcher {
-    position: absolute;
-    bottom: 80px;
-    right: 16px;
-    z-index: 500;
-  }
-
-  .style-toggle {
-    background: #fff;
-    border: 1px solid var(--line);
-    border-radius: 10px;
-    padding: 10px 14px;
-    font-family: inherit;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--ink);
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(10,22,40,0.12);
-    transition: all 0.18s;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .style-toggle:hover {
-    background: var(--ink);
-    color: #fff;
-    border-color: var(--ink);
-    transform: translateY(-1px);
-  }
-
+  .style-toggle:hover { background: var(--yellow); transform: translate(-1px, -1px); box-shadow: 3px 3px 0 var(--ink); }
+  .style-toggle:active { transform: scale(0.96); }
   .style-panel {
     position: absolute;
-    bottom: calc(100% + 10px);
+    bottom: calc(100% + 8px);
     right: 0;
-    background: #fff;
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    box-shadow: 0 12px 32px rgba(10,22,40,0.18);
-    padding: 14px;
-    min-width: 280px;
+    background: var(--white);
+    border: 1.5px solid var(--ink);
+    border-radius: 12px;
+    box-shadow: 5px 5px 0 var(--ink);
+    padding: 12px;
+    min-width: 270px;
     opacity: 0;
     visibility: hidden;
-    transform: translateY(8px) scale(0.96);
-    transform-origin: bottom right;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateY(8px);
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
   }
-
-  .style-switcher.open .style-panel {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0) scale(1);
-  }
-
+  .style-switcher.open .style-panel { opacity: 1; visibility: visible; transform: translateY(0); }
   .style-panel-title {
-    font-size: 11px;
+    font-family: var(--font-display);
+    font-size: 10px;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: var(--ink-soft);
-    margin-bottom: 10px;
+    color: var(--slate);
+    margin-bottom: 8px;
     font-weight: 700;
-    padding: 0 4px;
   }
-
-  .style-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
-  }
-
+  .style-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
   .style-btn {
     background: var(--paper);
     border: 1.5px solid transparent;
-    border-radius: 10px;
-    padding: 10px 12px;
-    cursor: pointer;
-    transition: all 0.15s;
+    border-radius: 8px;
+    padding: 8px 10px;
+    transition: all 0.12s;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 2px;
+    gap: 1px;
     text-align: left;
-    font-family: inherit;
   }
+  .style-btn:hover { background: var(--yellow-tint); border-color: var(--yellow); }
+  .style-btn.active { background: var(--ink); border-color: var(--ink); color: var(--yellow); }
+  .style-btn.active .style-desc { color: var(--slate-soft); }
+  .style-icon { font-size: 16px; margin-bottom: 1px; }
+  .style-label { font-family: var(--font-display); font-size: 11px; font-weight: 700; }
+  .style-desc { font-size: 9px; color: var(--slate); }
 
-  .style-btn:hover {
-    background: var(--accent-soft);
-    transform: translateY(-1px);
-  }
-
-  .style-btn.active {
-    background: var(--ink);
-    border-color: var(--ink);
-    color: #fff;
-  }
-
-  .style-btn.active .style-desc {
-    color: rgba(255,255,255,0.6);
-  }
-
-  .style-icon {
-    font-size: 18px;
-    margin-bottom: 2px;
-  }
-
-  .style-label {
-    font-size: 12px;
-    font-weight: 600;
-    color: inherit;
-  }
-
-  .style-desc {
-    font-size: 10px;
-    color: var(--ink-soft);
-    opacity: 0.8;
-  }
-
-  /* Custom Leaflet popup */
+  /* Popup */
   .leaflet-popup-content-wrapper {
     border-radius: 12px;
+    border: 1.5px solid var(--ink);
+    box-shadow: 5px 5px 0 var(--ink);
     padding: 0;
-    box-shadow: 0 8px 24px rgba(10,22,40,0.18);
-    border: 1px solid var(--line);
   }
-
-  .leaflet-popup-content {
-    margin: 0;
-    width: 260px !important;
-    font-family: 'IBM Plex Sans Thai', sans-serif;
-  }
-
-  .leaflet-popup-tip {
-    background: #fff;
-  }
-
-  .popup {
-    overflow: hidden;
-    border-radius: 12px;
-  }
-
-  .popup-head {
-    padding: 14px 16px 10px;
-    background: linear-gradient(135deg, #0a1628, #1a3a5c);
-    color: #fff;
-    position: relative;
-  }
-
-  .popup-zone-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
+  .leaflet-popup-content { margin: 0; min-width: 240px; font-family: var(--font-body); }
+  .leaflet-popup-tip { background: var(--ink); }
+  .leaflet-popup-close-button { color: var(--ink) !important; font-size: 22px !important; padding: 6px 10px 0 0 !important; }
+  .popup { padding: 12px 14px; }
+  .popup-zone {
+    display: inline-block;
+    background: var(--yellow);
+    color: var(--ink);
+    padding: 2px 9px;
+    border-radius: 100px;
     font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    background: rgba(255,255,255,0.15);
-    padding: 3px 8px;
-    border-radius: 999px;
+    font-weight: 700;
     margin-bottom: 6px;
-    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
   }
-
-  .popup-zone-tag .pdot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-  }
-
-  .popup-name {
+  .popup-title {
+    font-family: var(--font-display);
+    font-weight: 800;
     font-size: 14px;
-    font-weight: 600;
-    line-height: 1.35;
+    color: var(--ink);
+    line-height: 1.3;
+    margin-bottom: 5px;
   }
-
-  .popup-body {
-    padding: 12px 16px;
-    background: #fff;
-  }
-
-  .popup-landmark {
-    font-size: 12px;
-    color: var(--ink-soft);
-    display: flex;
-    align-items: flex-start;
-    gap: 6px;
-    margin-bottom: 12px;
-    line-height: 1.5;
-  }
-
-  .popup-landmark svg {
-    flex-shrink: 0;
-    margin-top: 2px;
-    color: var(--accent-deep);
-  }
-
+  .popup-landmark { font-size: 11px; color: var(--slate); line-height: 1.5; margin-bottom: 10px; }
   .popup-coord {
-    font-family: 'Bricolage Grotesque', monospace;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 6px 9px;
+    font-family: monospace;
     font-size: 10px;
-    color: var(--ink-soft);
-    opacity: 0.7;
-    margin-bottom: 12px;
-    letter-spacing: 0.02em;
+    color: var(--slate);
+    margin-bottom: 8px;
   }
-
-  .popup-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
-  }
-
+  .popup-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
   .popup-btn {
-    text-decoration: none;
+    padding: 8px 6px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
     text-align: center;
-    padding: 9px 8px;
-    border-radius: 8px;
-    font-size: 12px;
-    font-weight: 600;
-    transition: all 0.15s;
+    text-decoration: none;
+    transition: all 0.12s;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 5px;
+    min-height: 34px;
   }
+  .popup-btn.primary { background: var(--ink); color: var(--yellow); }
+  .popup-btn.primary:hover { background: var(--orange); color: var(--white); }
+  .popup-btn.secondary { background: var(--yellow); color: var(--ink); }
+  .popup-btn.secondary:hover { background: var(--orange); color: var(--white); }
 
-  .popup-btn.google {
-    background: var(--accent-deep);
-    color: #fff;
-  }
+  .pin-icon, .user-pin { background: transparent; border: none; }
 
-  .popup-btn.google:hover {
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: calc(24px + var(--safe-bottom));
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
     background: var(--ink);
+    color: var(--yellow);
+    padding: 10px 18px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 700;
+    box-shadow: var(--shadow-lg);
+    z-index: 9999;
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 90%;
+    text-align: center;
   }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
-  .popup-btn.apple {
-    background: var(--paper);
+  /* Loading */
+  #loading {
+    position: fixed;
+    inset: 0;
+    background: var(--ink);
+    display: grid;
+    place-items: center;
+    z-index: 99999;
+    transition: opacity 0.4s;
+  }
+  #loading.hide { opacity: 0; pointer-events: none; }
+  .loading-content { text-align: center; }
+  .loading-logo {
+    width: 56px; height: 56px;
+    background: var(--yellow);
+    border-radius: 14px;
+    margin: 0 auto 14px;
+    display: grid;
+    place-items: center;
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 800;
     color: var(--ink);
-    border: 1px solid var(--line);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+  }
+  .loading-text {
+    color: var(--yellow);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.05em;
   }
 
-  .popup-btn.apple:hover {
-    background: var(--ink);
-    color: #fff;
-    border-color: var(--ink);
-  }
+  .sheet-handle { display: none; }
+  .mobile-fab { display: none; }
 
-  /* Custom marker */
-  .pin-icon {
-    background: transparent;
-    border: none;
-  }
-
-  /* Mobile */
-  @media (max-width: 768px) {
-    body {
-      grid-template-columns: 1fr;
-      grid-template-rows: auto 1fr;
+  /* ===== MOBILE LAYOUT (auto + .force-mobile) ===== */
+  @media (max-width: 900px) {
+    body:not(.force-pc) .app { display: block; height: 100vh; height: 100dvh; position: relative; }
+    body:not(.force-pc) .map-wrap {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      width: 100%; height: 100vh; height: 100dvh; z-index: 1;
     }
-    aside {
-      max-height: 45vh;
+    body:not(.force-pc) .sidebar {
+      position: fixed; left: 0; right: 0; bottom: 0; top: auto;
+      height: 62vh; height: 62dvh;
+      max-height: 86vh; max-height: 86dvh;
       border-right: none;
-      border-bottom: 1px solid var(--line);
+      border-top-left-radius: 20px;
+      border-top-right-radius: 20px;
+      box-shadow: 0 -8px 30px rgba(0,0,0,0.15);
+      z-index: 1000;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex; flex-direction: column;
     }
-    .brand-stats { display: none; }
-    .leaflet-popup-content {
-      width: 220px !important;
+    body:not(.force-pc) .sidebar.collapsed {
+      transform: translateY(calc(100% - 200px));
     }
+    body:not(.force-pc) .sheet-handle {
+      display: flex;
+      justify-content: center;
+      padding: 7px 0 3px;
+      background: var(--ink);
+      border-top-left-radius: 20px;
+      border-top-right-radius: 20px;
+      cursor: grab;
+      user-select: none;
+      -webkit-user-select: none;
+      flex-shrink: 0;
+      touch-action: none;
+    }
+    body:not(.force-pc) .sheet-handle::before {
+      content: '';
+      width: 40px; height: 4px;
+      background: rgba(255,196,0,0.5);
+      border-radius: 100px;
+    }
+    body:not(.force-pc) .brand {
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
+    }
+    body:not(.force-pc) .mobile-fab {
+      display: flex;
+      position: fixed;
+      bottom: calc(18px + var(--safe-bottom));
+      right: 14px;
+      width: 50px; height: 50px;
+      background: var(--yellow);
+      color: var(--ink);
+      border-radius: 50%;
+      box-shadow: 0 5px 16px rgba(0,0,0,0.25), 0 0 0 2px var(--ink);
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      flex-direction: column;
+      gap: 1px;
+    }
+    body:not(.force-pc) .mobile-fab:active { transform: scale(0.92); }
+    body:not(.force-pc) .mobile-fab .fab-icon { font-size: 18px; line-height: 1; }
+    body:not(.force-pc) .mobile-fab .fab-label {
+      font-family: var(--font-display);
+      font-size: 7px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+    }
+    body:not(.force-pc) .app:not(.sheet-collapsed) .mobile-fab { display: none; }
+    body:not(.force-pc) .map-controls { top: calc(10px + var(--safe-top)); right: 10px; }
+    body:not(.force-pc) .style-switcher {
+      bottom: auto; top: calc(50px + var(--safe-top)); right: 10px;
+    }
+    body:not(.force-pc) .style-panel {
+      bottom: auto; top: calc(100% + 6px); right: 0;
+      min-width: 250px; max-width: calc(100vw - 24px);
+    }
+  }
+
+  /* Force PC mode (override on small screens) */
+  body.force-pc .app {
+    grid-template-columns: var(--sidebar-w) 1fr !important;
+    display: grid !important;
+  }
+  body.force-pc .sidebar {
+    position: relative !important;
+    transform: none !important;
+    height: 100% !important;
+    max-height: none !important;
+    border-radius: 0 !important;
+    border-right: 1px solid var(--line) !important;
+    box-shadow: none !important;
+  }
+  body.force-pc .map-wrap {
+    position: relative !important;
+  }
+
+  /* Force Mobile mode (override on big screens) */
+  body.force-mobile .app {
+    display: block !important;
+    grid-template-columns: none !important;
+    position: relative;
+    height: 100vh;
+    height: 100dvh;
+  }
+  body.force-mobile .map-wrap {
+    position: fixed !important;
+    top: 0; left: 0; right: 0; bottom: 0;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    z-index: 1;
+  }
+  body.force-mobile .sidebar {
+    position: fixed !important;
+    left: 50%; right: auto; bottom: 0; top: auto;
+    transform: translateX(-50%);
+    width: min(420px, 96vw);
+    height: 62dvh;
+    max-height: 86dvh;
+    border-right: none !important;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    box-shadow: 0 -8px 30px rgba(0,0,0,0.15) !important;
+    z-index: 1000;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex; flex-direction: column;
+  }
+  body.force-mobile .sidebar.collapsed {
+    transform: translateX(-50%) translateY(calc(100% - 200px));
+  }
+  body.force-mobile .sheet-handle {
+    display: flex;
+    justify-content: center;
+    padding: 7px 0 3px;
+    background: var(--ink);
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    cursor: grab;
+    user-select: none;
+    flex-shrink: 0;
+    touch-action: none;
+  }
+  body.force-mobile .sheet-handle::before {
+    content: '';
+    width: 40px; height: 4px;
+    background: rgba(255,196,0,0.5);
+    border-radius: 100px;
+  }
+  body.force-mobile .brand {
+    border-top-left-radius: 0; border-top-right-radius: 0;
+  }
+  body.force-mobile .mobile-fab {
+    display: flex;
+    position: fixed;
+    bottom: calc(18px + var(--safe-bottom));
+    right: 14px;
+    width: 50px; height: 50px;
+    background: var(--yellow);
+    color: var(--ink);
+    border-radius: 50%;
+    box-shadow: 0 5px 16px rgba(0,0,0,0.25), 0 0 0 2px var(--ink);
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 1px;
+  }
+  body.force-mobile .mobile-fab .fab-icon { font-size: 18px; line-height: 1; }
+  body.force-mobile .mobile-fab .fab-label {
+    font-family: var(--font-display);
+    font-size: 7px; font-weight: 800; letter-spacing: 0.04em;
+  }
+  body.force-mobile .app:not(.sheet-collapsed) .mobile-fab { display: none; }
+  body.force-mobile .map-controls { top: calc(10px + var(--safe-top)); right: 10px; }
+  body.force-mobile .style-switcher {
+    bottom: auto; top: calc(50px + var(--safe-top)); right: 10px;
+  }
+  body.force-mobile .style-panel {
+    bottom: auto; top: calc(100% + 6px); right: 0;
+    min-width: 250px; max-width: calc(100vw - 24px);
+  }
+
+  @media (max-width: 380px) {
+    .quick-chip { padding: 4px 8px; font-size: 10px; }
+    .zone-tab { padding: 4px 8px; font-size: 10px; }
   }
 </style>
 </head>
 <body>
 
-<aside>
-  <div class="brand">
-    <div class="brand-mark">
-      Wash<span class="amp">&amp;</span>Go<span class="dot"></span>
+<div id="loading">
+  <div class="loading-content">
+    <div class="loading-logo">W</div>
+    <div class="loading-text">WASH&GO</div>
+  </div>
+</div>
+
+<div class="app sheet-collapsed">
+  <main class="map-wrap">
+    <div id="map"></div>
+
+    <div class="map-controls">
+      <button class="map-ctrl" id="resetView">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+        </svg>
+        รีเซ็ต
+      </button>
     </div>
-    <div class="brand-tag">เครือข่ายล้างรถมาตรฐาน · ทั่วประเทศ</div>
-    <div class="brand-stats">
-      <div><strong id="stat-total">32</strong>สาขาทั้งหมด</div>
-      <div><strong id="stat-zones">7</strong>โซน</div>
-      <div><strong id="stat-prov">4</strong>จังหวัด</div>
-    </div>
-  </div>
 
-  <div class="search-wrap">
-    <div class="search">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-        <circle cx="11" cy="11" r="7"/>
-        <path d="m21 21-4.3-4.3"/>
-      </svg>
-      <input id="search" type="text" placeholder="ค้นหาสาขา เช่น พหลฯ, ลาดกระบัง...">
-    </div>
-  </div>
-
-  <div class="zones">
-    <div class="zones-title">กรองตามโซน</div>
-    <div class="zone-chips" id="chips"></div>
-  </div>
-
-  <div class="list" id="list"></div>
-</aside>
-
-<main>
-  <div id="map"></div>
-  <div class="map-overlay">
-    <button class="map-btn" id="resetView">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-        <path d="M3 3v5h5"/>
-      </svg>
-      มุมมองเริ่มต้น
-    </button>
-  </div>
-
-  <!-- Style switcher -->
-  <div class="style-switcher" id="styleSwitcher">
-    <button class="style-toggle" id="styleToggle" title="เปลี่ยนรูปแบบแผนที่">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polygon points="12 2 2 7 12 12 22 7 12 2"/>
-        <polyline points="2 17 12 22 22 17"/>
-        <polyline points="2 12 12 17 22 12"/>
-      </svg>
-      <span>รูปแบบแผนที่</span>
-    </button>
-    <div class="style-panel" id="stylePanel">
-      <div class="style-panel-title">เลือกรูปแบบแผนที่</div>
-      <div class="style-grid">
-        <button class="style-btn active" data-style="street">
-          <span class="style-icon">🗺️</span>
-          <span class="style-label">แผนที่ถนน</span>
-          <span class="style-desc">มาตรฐาน</span>
-        </button>
-        <button class="style-btn" data-style="satellite">
-          <span class="style-icon">🛰️</span>
-          <span class="style-label">ดาวเทียม</span>
-          <span class="style-desc">ภาพถ่ายจริง</span>
-        </button>
-        <button class="style-btn" data-style="hybrid">
-          <span class="style-icon">🌍</span>
-          <span class="style-label">ดาวเทียม+ถนน</span>
-          <span class="style-desc">ภาพ + ป้าย</span>
-        </button>
-        <button class="style-btn" data-style="terrain">
-          <span class="style-icon">⛰️</span>
-          <span class="style-label">ภูมิประเทศ</span>
-          <span class="style-desc">ความสูงต่ำ</span>
-        </button>
-        <button class="style-btn" data-style="light">
-          <span class="style-icon">☀️</span>
-          <span class="style-label">มินิมอล</span>
-          <span class="style-desc">พื้นเรียบ ขาว</span>
-        </button>
-        <button class="style-btn" data-style="dark">
-          <span class="style-icon">🌙</span>
-          <span class="style-label">โหมดมืด</span>
-          <span class="style-desc">กลางคืน</span>
-        </button>
+    <div class="style-switcher" id="styleSwitcher">
+      <button class="style-toggle" id="styleToggle">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>
+        </svg>
+        รูปแบบแผนที่
+      </button>
+      <div class="style-panel">
+        <div class="style-panel-title">เลือกรูปแบบแผนที่</div>
+        <div class="style-grid">
+          <button class="style-btn active" data-style="street"><span class="style-icon">🗺️</span><span class="style-label">แผนที่ถนน</span><span class="style-desc">มาตรฐาน</span></button>
+          <button class="style-btn" data-style="satellite"><span class="style-icon">🛰️</span><span class="style-label">ดาวเทียม</span><span class="style-desc">ภาพถ่ายจริง</span></button>
+          <button class="style-btn" data-style="hybrid"><span class="style-icon">🌍</span><span class="style-label">ดาวเทียม+ถนน</span><span class="style-desc">ภาพ + ป้าย</span></button>
+          <button class="style-btn" data-style="terrain"><span class="style-icon">⛰️</span><span class="style-label">ภูมิประเทศ</span><span class="style-desc">ความสูงต่ำ</span></button>
+          <button class="style-btn" data-style="light"><span class="style-icon">☀️</span><span class="style-label">มินิมอล</span><span class="style-desc">พื้นเรียบ</span></button>
+          <button class="style-btn" data-style="dark"><span class="style-icon">🌙</span><span class="style-label">โหมดมืด</span><span class="style-desc">กลางคืน</span></button>
+        </div>
       </div>
     </div>
-  </div>
-</main>
+  </main>
+
+  <aside class="sidebar collapsed" id="sidebar">
+    <div class="sheet-handle" id="sheetHandle"></div>
+
+    <!-- Brand (compact, with stats inline + mode toggle) -->
+    <div class="brand">
+      <div class="brand-row">
+        <div class="brand-logo">W</div>
+        <div class="brand-text">
+          <div class="brand-name">WASH<span class="accent">&</span>GO</div>
+          <div class="brand-sub"><span class="dot"></span>CS Branch Finder</div>
+        </div>
+        <div class="brand-stats-inline">
+          <div class="brand-stat-mini"><div class="num" id="stat-total">32</div><div class="lbl">สาขา</div></div>
+          <div class="brand-stat-mini"><div class="num" id="stat-zones">7</div><div class="lbl">โซน</div></div>
+        </div>
+        <div class="mode-toggle" id="modeToggle">
+          <button class="mode-btn" data-mode="auto" title="อัตโนมัติ">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+          </button>
+          <button class="mode-btn" data-mode="pc" title="โหมด PC">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          </button>
+          <button class="mode-btn" data-mode="mobile" title="โหมดมือถือ">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Finder -->
+    <div class="finder">
+      <div class="finder-label">
+        <div class="finder-label-icon">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </div>
+        <div class="finder-label-text">ลูกค้าอยู่ตรงไหน?</div>
+        <div class="finder-label-tag">CS TOOL</div>
+      </div>
+      <div class="finder-input-wrap">
+        <input type="text" class="finder-input" id="finder" placeholder="พิมพ์ย่าน เช่น รังสิต, ลาดกระบัง..." autocomplete="off" />
+        <button class="finder-gps" id="gpsBtn">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/>
+          </svg>
+          GPS
+        </button>
+      </div>
+      <div class="finder-quick">
+        <div class="finder-quick-row" id="quickAreas"></div>
+      </div>
+    </div>
+
+    <!-- Zone Bar -->
+    <div class="zone-bar">
+      <div class="zone-bar-scroll" id="zoneBar"></div>
+    </div>
+
+    <!-- Context bar -->
+    <div class="context-bar hidden" id="contextBar">
+      <div class="ctx-icon">📍</div>
+      <div class="ctx-text">
+        <span class="ctx-label">ค้นหา:</span>
+        <span class="ctx-value" id="contextValue">-</span>
+      </div>
+      <button class="clear" id="clearContext">ล้าง ✕</button>
+    </div>
+
+    <!-- Nearby Areas -->
+    <div class="nearby-bar hidden" id="nearbyBar">
+      <div class="nearby-bar-label">
+        <span class="ico">🔄</span>
+        <span>ย่านใกล้เคียง</span>
+      </div>
+      <div class="nearby-scroll" id="nearbyScroll"></div>
+    </div>
+
+    <div class="list-header">
+      <div class="list-title">
+        สาขา
+        <span class="list-count" id="listCount">0</span>
+      </div>
+      <div class="list-sort-info" id="sortInfo">เรียงตามโซน</div>
+    </div>
+
+    <div class="list" id="list"></div>
+  </aside>
+
+  <button class="mobile-fab" id="mobileFab" aria-label="เปิดรายการสาขา">
+    <span class="fab-icon">📋</span>
+    <span class="fab-label">สาขา</span>
+  </button>
+</div>
+
+<div class="toast" id="toast"></div>
 
 <script>
-// ============ DYNAMIC LEAFLET LOADER ============
-const LEAFLET_CDNS = [
-  { js: 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js',
-    css: 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css' },
-  { js: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
-    css: 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css' },
-  { js: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js',
-    css: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css' }
-];
+window.addEventListener('load', function() {
 
 function loadScript(src) {
   return new Promise((resolve, reject) => {
     const s = document.createElement('script');
     s.src = src;
-    s.onload = () => resolve();
-    s.onerror = () => reject(new Error('Failed to load ' + src));
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('Failed: ' + src));
     document.head.appendChild(s);
   });
 }
 
-function loadCSS(href) {
-  return new Promise((resolve) => {
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = href;
-    link.onload = () => resolve();
-    link.onerror = () => resolve(); // CSS error ไม่ critical
-    document.head.appendChild(link);
-  });
-}
-
 async function loadLeaflet() {
-  for (let i = 0; i < LEAFLET_CDNS.length; i++) {
-    const cdn = LEAFLET_CDNS[i];
+  const sources = [
+    'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+    'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js'
+  ];
+  for (const src of sources) {
     try {
-      await loadCSS(cdn.css);
-      await loadScript(cdn.js);
-      if (typeof L !== 'undefined') {
-        console.log('Leaflet loaded from CDN #' + (i + 1));
-        return true;
-      }
-    } catch (e) {
-      console.warn('CDN #' + (i + 1) + ' failed:', e.message);
-    }
+      await loadScript(src);
+      if (typeof L !== 'undefined') return true;
+    } catch (e) { console.warn('Failed:', src); }
   }
   return false;
 }
 
-loadLeaflet().then(success => {
-  if (!success) {
-    document.getElementById('map').innerHTML =
-      '<div style="padding:40px;text-align:center;color:#555;font-family:sans-serif">' +
-      '<h3>โหลด Leaflet ไม่สำเร็จ</h3>' +
-      '<p>ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต หรือ CDN อาจถูก block</p></div>';
+loadLeaflet().then((ok) => {
+  if (!ok) {
+    document.getElementById('loading').innerHTML = '<div style="color:#FFC400;text-align:center;padding:20px"><h3>โหลด Map Library ไม่สำเร็จ</h3></div>';
     return;
   }
   initApp();
@@ -868,569 +1201,590 @@ loadLeaflet().then(success => {
 
 function initApp() {
 
-// ============ DATA ============
 const ZONES = {
-  north:     { name: 'กรุงเทพฯ เหนือ',     short: 'BKK เหนือ',   color: '#2563eb' },
-  east:      { name: 'กรุงเทพฯ ตะวันออก',  short: 'BKK ตะวันออก',color: '#dc2626' },
-  west:      { name: 'กรุงเทพฯ ตะวันตก / นครปฐม', short: 'BKK ตะวันตก', color: '#16a34a' },
-  southbkk:  { name: 'กรุงเทพฯ ใต้ / ฝั่งธน', short: 'BKK ใต้',  color: '#9333ea' },
-  pattaya:   { name: 'ชลบุรี / พัทยา',      short: 'พัทยา',       color: '#ea580c' },
-  south:     { name: 'ภาคใต้ / หาดใหญ่',    short: 'หาดใหญ่',     color: '#0891b2' },
-  isan:      { name: 'ภาคอีสาน / ขอนแก่น',  short: 'ขอนแก่น',     color: '#ca8a04' }
+  north:    { tab: 'กทม. เหนือ',    short: 'กรุงเทพฯ เหนือ',     emoji: '⬆️' },
+  east:     { tab: 'กทม. ตะวันออก', short: 'กรุงเทพฯ ตะวันออก', emoji: '➡️' },
+  west:     { tab: 'กทม. ตะวันตก',  short: 'กรุงเทพฯ ตะวันตก',  emoji: '⬅️' },
+  southbkk: { tab: 'กทม. ใต้',      short: 'กรุงเทพฯ ใต้/ฝั่งธน', emoji: '⬇️' },
+  pattaya:  { tab: 'พัทยา',         short: 'พัทยา / ชลบุรี',    emoji: '🏖️' },
+  south:    { tab: 'หาดใหญ่',       short: 'หาดใหญ่',           emoji: '🌴' },
+  isan:     { tab: 'ขอนแก่น',       short: 'ขอนแก่น',           emoji: '🌾' }
 };
 
 const BRANCHES = [
-  // กรุงเทพฯ เหนือ
-  { name: 'บางจาก พหลฯ 35',                lat: 13.83118341838249,  lng: 100.5697637575587,  zone: 'north',    landmark: 'ในปั๊มบางจาก ถ.พหลโยธิน ฝั่งขาออก เยื้อง ม.เกษตรฯ ใกล้ BTS เสนานิคม' },
-  { name: '7-11 ติวานนท์ 27',              lat: 13.87039009474186,  lng: 100.51740255282103, zone: 'north',    landmark: 'หน้า 7-Eleven ปากซอยติวานนท์ 27 (นนทบุรี) ใกล้กระทรวงสาธารณสุข' },
-  { name: 'Lotus วิภาวดี 64',              lat: 13.87420969380886,  lng: 100.57860440174521, zone: 'north',    landmark: 'ในห้าง Lotus Go Fresh วิภาวดี 64 (ตลาดบางเขน) ใกล้สี่แยกหลักสี่' },
-  { name: '7-11 ชินเขต',                   lat: 13.860352824285803, lng: 100.55156073785213, zone: 'north',    landmark: 'หน้า 7-Eleven ย่านชินเขต ใกล้สี่แยกบางเขน-แจ้งวัฒนะ' },
-  { name: 'บางจาก สายไหม',                 lat: 13.922179659360616, lng: 100.69920108068342, zone: 'north',    landmark: 'ในปั๊มบางจาก ถ.สายไหม ใกล้ตลาดวงศกร และ ออเงิน' },
-  { name: 'สวัสดิการ NT',                  lat: 13.883170348638288, lng: 100.57504146374808, zone: 'north',    landmark: 'สวัสดิการ NT (กสท.โทรคมนาคม) ถ.แจ้งวัฒนะ ใกล้ศูนย์ราชการแจ้งวัฒนะ' },
-  { name: 'พหลโยธิน กม.26',                lat: 13.938787025592484, lng: 100.62327026087426, zone: 'north',    landmark: 'ถ.พหลโยธิน กม.26 ใกล้ ม.กรุงเทพ รังสิต และ Future Park' },
-  { name: 'ตลาดรังสิต',                    lat: 13.987193957124665, lng: 100.61224866086717, zone: 'north',    landmark: 'ใกล้ตลาดรังสิต (ตลาดสี่มุมเมือง) ปากทางเข้าธรรมศาสตร์ รังสิต' },
-  { name: '7-11 ถาวรวิลล่า ลำลูกกาคลอง 3', lat: 13.932747775348961, lng: 100.67222053253194, zone: 'north',    landmark: 'หน้า 7-Eleven หมู่บ้านถาวรวิลล่า ลำลูกกา คลอง 3 ใกล้ตลาดเอซี' },
-  { name: 'บางจากสุขาภิบาล',               lat: 13.87915489801215,  lng: 100.6507464826342,  zone: 'north',    landmark: 'ในปั๊มบางจาก ถ.สุขาภิบาล 5 (ออเงิน) ใกล้สี่แยกออเงิน' },
-
-  // กรุงเทพฯ ตะวันออก
-  { name: '7-11 พระราม 9 ซอย 39',          lat: 13.745112303198647, lng: 100.61007592086531, zone: 'east',     landmark: 'หน้า 7-Eleven พระราม 9 ซ.39 (หัวหมาก) ใกล้ ม.รามคำแหง 1' },
-  { name: 'บางจาก รามคำแหง',               lat: 13.752673227111101, lng: 100.61167132611232, zone: 'east',     landmark: 'ในปั๊มบางจาก ถ.รามคำแหง ใกล้ ม.รามคำแหง และ The Mall บางกะปิ' },
-  { name: 'บางจาก ลาดกระบัง ซ.1',          lat: 13.72313433290512,  lng: 100.71404513295153, zone: 'east',     landmark: 'ในปั๊มบางจาก ถ.ลาดกระบัง ซ.1 ใกล้ตลาดหัวตะเข้ และสถาบันเทคโนโลยีลาดกระบัง' },
-  { name: 'PTT นิคมฯ ลาดกระบัง',           lat: 13.75521226947805,  lng: 100.79684601567453, zone: 'east',     landmark: 'ปั๊ม ปตท. นิคมอุตสาหกรรมลาดกระบัง ใกล้ Mega Bangna และโรงงานต่างๆ' },
-  { name: 'ปตท. สุวรรณภูมิ-ลาดกระบัง',     lat: 13.720786846171157, lng: 100.79264894347986, zone: 'east',     landmark: 'ปตท. ถ.หลวงแพ่ง ใกล้สนามบินสุวรรณภูมิ และคลังสินค้าฟรีโซน' },
-  { name: 'ซัสโก้ สุขาภิบาล 5',            lat: 13.89043340348926,  lng: 100.65655367439392, zone: 'east',     landmark: 'ในปั๊ม Susco ถ.สุขาภิบาล 5 (สายไหม) ใกล้วัดเกาะ และตลาดยิ่งเจริญ' },
-  { name: 'Lotus เสรีไทย',                 lat: 13.784400262080302, lng: 100.67373560625529, zone: 'east',     landmark: 'ในห้าง Lotus เสรีไทย (บึงกุ่ม) ใกล้สวนเสรีไทย' },
-  { name: 'บางจาก เกษตรนวมินทร์',          lat: 13.830652093663607, lng: 100.62032298966066, zone: 'east',     landmark: 'ในปั๊มบางจาก ถ.เกษตร-นวมินทร์ ใกล้ Central Eastville และ The Crystal' },
-
-  // กรุงเทพฯ ตะวันตก / นครปฐม
-  { name: 'PT หนองแขม',                    lat: 13.704407968300988, lng: 100.34099919139064, zone: 'west',     landmark: 'ปั๊ม PT ถ.พุทธมณฑลสาย 4 (หนองแขม) ใกล้ The Mall บางแค และวัดหนองแขม' },
-  { name: 'ปตท. กาญจนาภิเษก-ตลิ่งชัน',    lat: 13.773990581359632, lng: 100.40710399728266, zone: 'west',     landmark: 'ปตท. ถ.กาญจนาภิเษก ใกล้ทางด่วนตลิ่งชัน-สุพรรณบุรี และ Central Westville' },
-  { name: 'บางจาก บรมฯ (ศาลายา)',          lat: 13.788709567267619, lng: 100.34447384080613, zone: 'west',     landmark: 'ในปั๊มบางจาก ถ.บรมราชชนนี (ขาออก) ใกล้ทางขึ้นทางด่วนพุทธมณฑลสาย 4' },
-  { name: 'PT MAX REST นครชัยศรี',         lat: 13.80836056769069,  lng: 100.1490408761757,  zone: 'west',     landmark: 'PT MAX REST ถ.เพชรเกษม นครชัยศรี ใกล้ตลาดน้ำดอนหวาย' },
-  { name: 'PTT ธรรมศาลา',                  lat: 13.81255250185,     lng: 100.10452761229372, zone: 'west',     landmark: 'ปตท. ถ.เพชรเกษม ต.ธรรมศาลา (เมืองนครปฐม) ใกล้องค์พระปฐมเจดีย์' },
-
-  // กรุงเทพฯ ใต้ / ฝั่งธน
-  { name: 'บางจาก สำโรง',                  lat: 13.654393738983108, lng: 100.5993607332231,  zone: 'southbkk', landmark: 'ในปั๊มบางจาก ถ.สุขุมวิท (สำโรง) ใกล้ BTS สำโรง และอิมพีเรียลเวิลด์' },
-  { name: 'Lotus เอกชัย 99/1',             lat: 13.657862853562822, lng: 100.39735593846419, zone: 'southbkk', landmark: 'ในห้าง Lotus เอกชัย 99/1 (บางบอน) ใกล้ ถ.พระรามที่ 2' },
-  { name: 'บางจาก ราษฎร์บูรณะ',            lat: 13.673047855798517, lng: 100.51795481159786, zone: 'southbkk', landmark: 'ในปั๊มบางจาก ถ.ราษฎร์บูรณะ ใกล้สะพานพระราม 9 และ BTS ราษฎร์บูรณะ' },
-
-  // ชลบุรี / พัทยา
-  { name: 'Susco นาเกลือ',                 lat: 12.9564646953509,   lng: 100.89174598292834, zone: 'pattaya',  landmark: 'ในปั๊ม Susco ถ.พัทยา-นาเกลือ ใกล้ตลาดลานโพธิ์ นาเกลือ และ Terminal 21 พัทยา' },
-  { name: 'บางจาก นาเกลือ',                lat: 12.964554090161295, lng: 100.91008547493757, zone: 'pattaya',  landmark: 'ในปั๊มบางจาก ถ.สุขุมวิท นาเกลือ ใกล้ Mimosa Pattaya และตลาดน้ำ 4 ภาค' },
-  { name: 'ปตท. แยกหาดจอมเทียน',           lat: 12.883005566433978, lng: 100.89917488269577, zone: 'pattaya',  landmark: 'ปั๊ม ปตท. ใกล้แยกหาดจอมเทียน ทางลงหาดจอมเทียน และ Cartoon Network Amazone' },
-
-  // ภาคใต้ / หาดใหญ่
-  { name: 'PTT หน้าสวนสาธารณะหาดใหญ่',     lat: 7.039715659952488,  lng: 100.50234235403522, zone: 'south',    landmark: 'ปตท. ถ.กาญจนวนิช หน้าสวนสาธารณะเทศบาลนครหาดใหญ่ ใกล้สนามกีฬาฯ' },
-  { name: 'สี่แยกไดอาน่า',                 lat: 6.99805515473577,   lng: 100.480051402687,   zone: 'south',    landmark: 'สี่แยกไดอาน่า ถ.ศรีภูวนารถ หาดใหญ่ ใกล้ห้างไดอาน่า และเซ็นทรัลเฟสติวัล' },
-
-  // ภาคอีสาน / ขอนแก่น
-  { name: 'บางจาก ขอนแก่น',                lat: 16.379936470345616, lng: 102.81135531045184, zone: 'isan',     landmark: 'ในปั๊มบางจาก ถ.มิตรภาพ จ.ขอนแก่น ใกล้ ม.ขอนแก่น และ Central Khon Kaen' }
+  { name: 'บางจาก พหลฯ 35', lat: 13.83118341838249, lng: 100.5697637575587, zone: 'north', landmark: 'ในปั๊มบางจาก ถ.พหลโยธิน ฝั่งขาออก เยื้อง ม.เกษตรฯ ใกล้ BTS เสนานิคม' },
+  { name: '7-11 ติวานนท์ 27', lat: 13.87039009474186, lng: 100.51740255282103, zone: 'north', landmark: 'หน้า 7-Eleven ปากซอยติวานนท์ 27 (นนทบุรี) ใกล้กระทรวงสาธารณสุข' },
+  { name: 'Lotus วิภาวดี 64', lat: 13.87420969380886, lng: 100.57860440174521, zone: 'north', landmark: 'ในห้าง Lotus Go Fresh วิภาวดี 64 (ตลาดบางเขน) ใกล้สี่แยกหลักสี่' },
+  { name: '7-11 ชินเขต', lat: 13.860352824285803, lng: 100.55156073785213, zone: 'north', landmark: 'หน้า 7-Eleven ย่านชินเขต ใกล้สี่แยกบางเขน-แจ้งวัฒนะ' },
+  { name: 'บางจาก สายไหม', lat: 13.922179659360616, lng: 100.69920108068342, zone: 'north', landmark: 'ในปั๊มบางจาก ถ.สายไหม ใกล้ตลาดวงศกร และ ออเงิน' },
+  { name: 'สวัสดิการ NT', lat: 13.883170348638288, lng: 100.57504146374808, zone: 'north', landmark: 'สวัสดิการ NT (กสท.โทรคมนาคม) ถ.แจ้งวัฒนะ ใกล้ศูนย์ราชการแจ้งวัฒนะ' },
+  { name: 'พหลโยธิน กม.26', lat: 13.938787025592484, lng: 100.62327026087426, zone: 'north', landmark: 'ถ.พหลโยธิน กม.26 ใกล้ ม.กรุงเทพ รังสิต และ Future Park' },
+  { name: 'ตลาดรังสิต', lat: 13.987193957124665, lng: 100.61224866086717, zone: 'north', landmark: 'ใกล้ตลาดรังสิต (ตลาดสี่มุมเมือง) ปากทางเข้าธรรมศาสตร์ รังสิต' },
+  { name: '7-11 ถาวรวิลล่า ลำลูกกาคลอง 3', lat: 13.932747775348961, lng: 100.67222053253194, zone: 'north', landmark: 'หน้า 7-Eleven หมู่บ้านถาวรวิลล่า ลำลูกกา คลอง 3 ใกล้ตลาดเอซี' },
+  { name: 'บางจากสุขาภิบาล', lat: 13.87915489801215, lng: 100.6507464826342, zone: 'north', landmark: 'ในปั๊มบางจาก ถ.สุขาภิบาล 5 (ออเงิน) ใกล้สี่แยกออเงิน' },
+  { name: '7-11 พระราม 9 ซอย 39', lat: 13.745112303198647, lng: 100.61007592086531, zone: 'east', landmark: 'หน้า 7-Eleven พระราม 9 ซ.39 (หัวหมาก) ใกล้ ม.รามคำแหง 1' },
+  { name: 'บางจาก รามคำแหง', lat: 13.752673227111101, lng: 100.61167132611232, zone: 'east', landmark: 'ในปั๊มบางจาก ถ.รามคำแหง ใกล้ ม.รามคำแหง และ The Mall บางกะปิ' },
+  { name: 'บางจาก ลาดกระบัง ซ.1', lat: 13.72313433290512, lng: 100.71404513295153, zone: 'east', landmark: 'ในปั๊มบางจาก ถ.ลาดกระบัง ซ.1 ใกล้ตลาดหัวตะเข้ และสถาบันเทคโนโลยีลาดกระบัง' },
+  { name: 'PTT นิคมฯ ลาดกระบัง', lat: 13.75521226947805, lng: 100.79684601567453, zone: 'east', landmark: 'ปั๊ม ปตท. นิคมอุตสาหกรรมลาดกระบัง ใกล้ Mega Bangna และโรงงานต่างๆ' },
+  { name: 'ปตท. สุวรรณภูมิ-ลาดกระบัง', lat: 13.720786846171157, lng: 100.79264894347986, zone: 'east', landmark: 'ปตท. ถ.หลวงแพ่ง ใกล้สนามบินสุวรรณภูมิ และคลังสินค้าฟรีโซน' },
+  { name: 'ซัสโก้ สุขาภิบาล 5', lat: 13.89043340348926, lng: 100.65655367439392, zone: 'east', landmark: 'ในปั๊ม Susco ถ.สุขาภิบาล 5 (สายไหม) ใกล้วัดเกาะ และตลาดยิ่งเจริญ' },
+  { name: 'Lotus เสรีไทย', lat: 13.784400262080302, lng: 100.67373560625529, zone: 'east', landmark: 'ในห้าง Lotus เสรีไทย (บึงกุ่ม) ใกล้สวนเสรีไทย' },
+  { name: 'บางจาก เกษตรนวมินทร์', lat: 13.830652093663607, lng: 100.62032298966066, zone: 'east', landmark: 'ในปั๊มบางจาก ถ.เกษตร-นวมินทร์ ใกล้ Central Eastville และ The Crystal' },
+  { name: 'PT หนองแขม', lat: 13.704407968300988, lng: 100.34099919139064, zone: 'west', landmark: 'ปั๊ม PT ถ.พุทธมณฑลสาย 4 (หนองแขม) ใกล้ The Mall บางแค และวัดหนองแขม' },
+  { name: 'ปตท. กาญจนาภิเษก-ตลิ่งชัน', lat: 13.773990581359632, lng: 100.40710399728266, zone: 'west', landmark: 'ปตท. ถ.กาญจนาภิเษก ใกล้ทางด่วนตลิ่งชัน-สุพรรณบุรี และ Central Westville' },
+  { name: 'บางจาก บรมฯ (ศาลายา)', lat: 13.788709567267619, lng: 100.34447384080613, zone: 'west', landmark: 'ในปั๊มบางจาก ถ.บรมราชชนนี (ขาออก) ใกล้ทางขึ้นทางด่วนพุทธมณฑลสาย 4' },
+  { name: 'PT MAX REST นครชัยศรี', lat: 13.80836056769069, lng: 100.1490408761757, zone: 'west', landmark: 'PT MAX REST ถ.เพชรเกษม นครชัยศรี ใกล้ตลาดน้ำดอนหวาย' },
+  { name: 'PTT ธรรมศาลา', lat: 13.81255250185, lng: 100.10452761229372, zone: 'west', landmark: 'ปตท. ถ.เพชรเกษม ต.ธรรมศาลา (เมืองนครปฐม) ใกล้องค์พระปฐมเจดีย์' },
+  { name: 'บางจาก สำโรง', lat: 13.654393738983108, lng: 100.5993607332231, zone: 'southbkk', landmark: 'ในปั๊มบางจาก ถ.สุขุมวิท (สำโรง) ใกล้ BTS สำโรง และอิมพีเรียลเวิลด์' },
+  { name: 'Lotus เอกชัย 99/1', lat: 13.657862853562822, lng: 100.39735593846419, zone: 'southbkk', landmark: 'ในห้าง Lotus เอกชัย 99/1 (บางบอน) ใกล้ ถ.พระรามที่ 2' },
+  { name: 'บางจาก ราษฎร์บูรณะ', lat: 13.673047855798517, lng: 100.51795481159786, zone: 'southbkk', landmark: 'ในปั๊มบางจาก ถ.ราษฎร์บูรณะ ใกล้สะพานพระราม 9 และ BTS ราษฎร์บูรณะ' },
+  { name: 'Susco นาเกลือ', lat: 12.9564646953509, lng: 100.89174598292834, zone: 'pattaya', landmark: 'ในปั๊ม Susco ถ.พัทยา-นาเกลือ ใกล้ตลาดลานโพธิ์ นาเกลือ และ Terminal 21 พัทยา' },
+  { name: 'บางจาก นาเกลือ', lat: 12.964554090161295, lng: 100.91008547493757, zone: 'pattaya', landmark: 'ในปั๊มบางจาก ถ.สุขุมวิท นาเกลือ ใกล้ Mimosa Pattaya และตลาดน้ำ 4 ภาค' },
+  { name: 'ปตท. แยกหาดจอมเทียน', lat: 12.883005566433978, lng: 100.89917488269577, zone: 'pattaya', landmark: 'ปั๊ม ปตท. ใกล้แยกหาดจอมเทียน ทางลงหาดจอมเทียน และ Cartoon Network Amazone' },
+  { name: 'PTT หน้าสวนสาธารณะหาดใหญ่', lat: 7.039715659952488, lng: 100.50234235403522, zone: 'south', landmark: 'ปตท. ถ.กาญจนวนิช หน้าสวนสาธารณะเทศบาลนครหาดใหญ่ ใกล้สนามกีฬาฯ' },
+  { name: 'สี่แยกไดอาน่า', lat: 6.99805515473577, lng: 100.480051402687, zone: 'south', landmark: 'สี่แยกไดอาน่า ถ.ศรีภูวนารถ หาดใหญ่ ใกล้ห้างไดอาน่า และเซ็นทรัลเฟสติวัล' },
+  { name: 'บางจาก ขอนแก่น', lat: 16.379936470345616, lng: 102.81135531045184, zone: 'isan', landmark: 'ในปั๊มบางจาก ถ.มิตรภาพ จ.ขอนแก่น ใกล้ ม.ขอนแก่น และ Central Khon Kaen' }
 ];
 
-// ============ STATE ============
+const AREAS = [
+  { keys: ['รังสิต','rangsit','ฟิวเจอร์พาร์ค','future park','ม.ธรรมศาสตร์','ธรรมศาสตร์รังสิต','ม.กรุงเทพ','คลองรังสิต','ปทุมธานี','pathumthani'], name: 'รังสิต / ปทุมธานี', lat: 13.9833, lng: 100.6167 },
+  { keys: ['ดอนเมือง','don muang','สนามบินดอนเมือง','dmk'], name: 'ดอนเมือง', lat: 13.92, lng: 100.598 },
+  { keys: ['ลำลูกกา','คลองหลวง','คลอง 3','คลอง3','คลอง 4','คลอง4','คลอง 2','คลอง2'], name: 'ลำลูกกา / คลองหลวง', lat: 13.9628, lng: 100.6889 },
+  { keys: ['สายไหม','ออเงิน','วงศกร','สุขาภิบาล 5','สุขาภิบาล5'], name: 'สายไหม / ออเงิน', lat: 13.91, lng: 100.67 },
+  { keys: ['แจ้งวัฒนะ','ปากเกร็ด','ศูนย์ราชการ','เมืองทอง','เมืองทองธานี','impact','อิมแพ็ค'], name: 'แจ้งวัฒนะ / ปากเกร็ด', lat: 13.893, lng: 100.54 },
+  { keys: ['หลักสี่','บางเขน','ติวานนท์'], name: 'หลักสี่ / บางเขน', lat: 13.87, lng: 100.575 },
+  { keys: ['พหลโยธิน','พหล','พหลฯ','เสนานิคม','รัชโยธิน','สะพานควาย','อารีย์','อนุสาวรีย์ชัย','ม.เกษตร','เกษตรศาสตร์','ku'], name: 'พหลโยธิน / เกษตร', lat: 13.82, lng: 100.565 },
+  { keys: ['วิภาวดี','จตุจักร','สวนจตุจักร','mrt จตุจักร'], name: 'วิภาวดี / จตุจักร', lat: 13.83, lng: 100.56 },
+  { keys: ['ลาดพร้าว','รัชดา','รัชดาภิเษก','ห้วยขวาง','สุทธิสาร'], name: 'ลาดพร้าว / รัชดา', lat: 13.815, lng: 100.575 },
+  { keys: ['นนทบุรี','พระนั่งเกล้า','รัตนาธิเบศร์'], name: 'นนทบุรี', lat: 13.86, lng: 100.515 },
+  { keys: ['ลาดกระบัง','สถาบันเทคโนโลยีลาดกระบัง','สจล','kmitl','หัวตะเข้','คลองด่าน'], name: 'ลาดกระบัง', lat: 13.735, lng: 100.78 },
+  { keys: ['สุวรรณภูมิ','suvarnabhumi','airport','สนามบินสุวรรณภูมิ','bkk','สนามบิน'], name: 'สุวรรณภูมิ', lat: 13.69, lng: 100.75 },
+  { keys: ['รามคำแหง','หัวหมาก','บางกะปิ','the mall','เดอะมอลล์','เดอะมอลบางกะปิ','ม.รามคำแหง'], name: 'รามคำแหง / บางกะปิ', lat: 13.755, lng: 100.61 },
+  { keys: ['พระราม 9','พระราม9','rama 9','rama9','rca','คลองตัน','สวนหลวง','ฟอร์จูน','fortune'], name: 'พระราม 9', lat: 13.745, lng: 100.61 },
+  { keys: ['เสรีไทย','บึงกุ่ม','สวนเสรีไทย'], name: 'เสรีไทย / บึงกุ่ม', lat: 13.785, lng: 100.673 },
+  { keys: ['นวมินทร์','เกษตร-นวมินทร์','เกษตรนวมินทร์','ครีสตัล','crystal','eastville','ประดิษฐ์มนูธรรม'], name: 'เกษตร-นวมินทร์', lat: 13.83, lng: 100.62 },
+  { keys: ['มีนบุรี','หนองจอก','คลองสามวา','รามอินทรา','คู้บอน','สวนสยาม'], name: 'มีนบุรี / รามอินทรา', lat: 13.815, lng: 100.73 },
+  { keys: ['บางนา','bangna','mega bangna','เมกะ บางนา','udom suk','อุดมสุข','แบริ่ง','bearing'], name: 'บางนา / เมกะ บางนา', lat: 13.668, lng: 100.61 },
+  { keys: ['ตลิ่งชัน','พุทธมณฑล','พุทธมณฑลสาย 4','พุทธมณฑลสาย4','สาย 4'], name: 'ตลิ่งชัน / พุทธมณฑล', lat: 13.78, lng: 100.41 },
+  { keys: ['ศาลายา','salaya','ม.มหิดล','มหิดล','mahidol','บรมราชชนนี','บรม'], name: 'ศาลายา / มหิดล', lat: 13.795, lng: 100.32 },
+  { keys: ['หนองแขม','บางแค','เพชรเกษม','บางบอน','ภาษีเจริญ'], name: 'บางแค / หนองแขม', lat: 13.705, lng: 100.36 },
+  { keys: ['นครปฐม','พระปฐมเจดีย์','ม.ศิลปากร','silpakorn','ธรรมศาลา'], name: 'นครปฐม', lat: 13.82, lng: 100.06 },
+  { keys: ['นครชัยศรี','ดอนหวาย','ตลาดน้ำดอนหวาย','สามพราน'], name: 'นครชัยศรี / สามพราน', lat: 13.8, lng: 100.15 },
+  { keys: ['ปิ่นเกล้า','พรานนก','บางกอกน้อย','ศิริราช','arun amarin','อรุณอมรินทร์','จรัญ','จรัญสนิทวงศ์'], name: 'ปิ่นเกล้า', lat: 13.77, lng: 100.475 },
+  { keys: ['กาญจนาภิเษก','central westville','เซ็นทรัลเวสต์เกต','westgate'], name: 'กาญจนาภิเษก / Westgate', lat: 13.86, lng: 100.45 },
+  { keys: ['สำโรง','samrong','สมุทรปราการ','samut prakan','ปู่เจ้า','imperial','อิมพีเรียล'], name: 'สำโรง / สมุทรปราการ', lat: 13.655, lng: 100.6 },
+  { keys: ['ศรีนครินทร์','srinakarin','seacon','ซีคอน','ซีคอนสแควร์','seacon square','พาราไดซ์','paradise'], name: 'ศรีนครินทร์', lat: 13.685, lng: 100.645 },
+  { keys: ['ราษฎร์บูรณะ','ทุ่งครุ','พระประแดง'], name: 'ราษฎร์บูรณะ', lat: 13.67, lng: 100.518 },
+  { keys: ['พระราม 2','พระราม2','rama 2','บางขุนเทียน'], name: 'พระราม 2', lat: 13.67, lng: 100.45 },
+  { keys: ['เอกชัย','มหาชัย','สมุทรสาคร','samut sakhon'], name: 'เอกชัย / สมุทรสาคร', lat: 13.658, lng: 100.4 },
+  { keys: ['สุขุมวิท','sukhumvit','อโศก','asok','asoke','terminal 21'], name: 'อโศก / สุขุมวิท', lat: 13.737, lng: 100.56 },
+  { keys: ['ทองหล่อ','thonglor','เอกมัย','ekamai','พร้อมพงษ์','phromphong','prompong','emporium','เอ็มโพเรียม','emquartier'], name: 'ทองหล่อ / เอกมัย', lat: 13.73, lng: 100.58 },
+  { keys: ['ออนนุช','onnut','อ่อนนุช','พระโขนง','อุดมสุข','ปุณณวิถี'], name: 'อ่อนนุช / พระโขนง', lat: 13.705, lng: 100.6 },
+  { keys: ['สีลม','silom','สาทร','sathon','ลุมพินี','สามย่าน','samyan','จุฬา','chula'], name: 'สีลม / สาทร', lat: 13.728, lng: 100.535 },
+  { keys: ['สยาม','siam','siam paragon','พารากอน','centralworld','เซ็นทรัลเวิลด์','ราชประสงค์','ชิดลม','chidlom','เพลินจิต'], name: 'สยาม / ราชประสงค์', lat: 13.745, lng: 100.539 },
+  { keys: ['เยาวราช','yaowarat','china town','ไชนาทาวน์','สำเพ็ง','คลองสาน'], name: 'เยาวราช / คลองสาน', lat: 13.73, lng: 100.51 },
+  { keys: ['ห้าแยกลาดพร้าว','เซ็นทรัลลาดพร้าว','central ladprao','union mall'], name: 'ห้าแยกลาดพร้าว', lat: 13.815, lng: 100.56 },
+  { keys: ['พัทยา','pattaya','นาเกลือ','naklua','jomtien','จอมเทียน','walking street','ชลบุรี','chonburi','บางแสน'], name: 'พัทยา / ชลบุรี', lat: 12.93, lng: 100.883 },
+  { keys: ['หาดใหญ่','hatyai','สงขลา','songkhla','ม.อ.','psu','ไดอาน่า','diana','lee garden','ลีการ์เด้น','คลองแห'], name: 'หาดใหญ่ / สงขลา', lat: 7.02, lng: 100.49 },
+  { keys: ['ขอนแก่น','khon kaen','ม.ขอนแก่น','มข','central khon kaen','มิตรภาพ'], name: 'ขอนแก่น', lat: 16.44, lng: 102.835 }
+];
+
+const QUICK_AREAS = ['รังสิต', 'ลาดกระบัง', 'พระราม 9', 'แจ้งวัฒนะ', 'สำโรง', 'พัทยา', 'หาดใหญ่'];
+
 let activeZone = 'all';
-let searchTerm = '';
-const markers = {}; // index -> marker
+let searchContext = null;
+const markers = {};
+let userMarker = null;
 let activeBranchIdx = null;
 
-// ============ MAP ============
-const map = L.map('map', {
-  zoomControl: false,
-  attributionControl: true
-}).setView([13.75, 100.55], 11);
-
+const map = L.map('map', { zoomControl: false, tap: true }).setView([13.75, 100.55], 11);
 L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-// ============ MAP STYLES ============
-// แต่ละสไตล์มี multiple providers (auto-fallback ในตัว)
 const MAP_STYLES = {
-  street: {
-    label: 'แผนที่ถนน',
-    icon: '🗺️',
-    description: 'มาตรฐาน',
-    providers: [
-      {
-        name: 'Google Street',
-        url: 'https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',
-        subdomains: '0123', maxZoom: 20,
-        attribution: '&copy; Google'
-      },
-      {
-        name: 'ESRI Street',
-        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
-        maxZoom: 19, attribution: 'Tiles &copy; Esri'
-      },
-      {
-        name: 'OpenStreetMap',
-        url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-        maxZoom: 19, attribution: '&copy; OpenStreetMap'
-      }
-    ]
-  },
-  satellite: {
-    label: 'ดาวเทียม',
-    icon: '🛰️',
-    description: 'ภาพถ่ายจริง',
-    providers: [
-      {
-        name: 'Google Satellite',
-        url: 'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
-        subdomains: '0123', maxZoom: 20,
-        attribution: '&copy; Google'
-      },
-      {
-        name: 'ESRI Satellite',
-        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-        maxZoom: 19, attribution: 'Tiles &copy; Esri'
-      }
-    ]
-  },
-  hybrid: {
-    label: 'ดาวเทียม + ถนน',
-    icon: '🌍',
-    description: 'ภาพถ่าย + ป้ายถนน',
-    providers: [
-      {
-        name: 'Google Hybrid',
-        url: 'https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
-        subdomains: '0123', maxZoom: 20,
-        attribution: '&copy; Google'
-      }
-    ]
-  },
-  terrain: {
-    label: 'ภูมิประเทศ',
-    icon: '⛰️',
-    description: 'ความสูงต่ำของพื้นที่',
-    providers: [
-      {
-        name: 'Google Terrain',
-        url: 'https://mt{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}',
-        subdomains: '0123', maxZoom: 20,
-        attribution: '&copy; Google'
-      },
-      {
-        name: 'OpenTopoMap',
-        url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-        subdomains: 'abc', maxZoom: 17,
-        attribution: '&copy; OpenTopoMap'
-      }
-    ]
-  },
-  light: {
-    label: 'สว่าง มินิมอล',
-    icon: '☀️',
-    description: 'พื้นหลังเรียบ ขาว',
-    providers: [
-      {
-        name: 'CARTO Positron',
-        url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-        subdomains: 'abcd', maxZoom: 19,
-        attribution: '&copy; CARTO'
-      }
-    ]
-  },
-  dark: {
-    label: 'มืด',
-    icon: '🌙',
-    description: 'โหมดกลางคืน',
-    providers: [
-      {
-        name: 'CARTO Dark Matter',
-        url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-        subdomains: 'abcd', maxZoom: 19,
-        attribution: '&copy; CARTO'
-      }
-    ]
-  }
+  street: { providers: [
+    { url: 'https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', subdomains: '0123', maxZoom: 20, attribution: '&copy; Google' },
+    { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', maxZoom: 19, attribution: 'Tiles &copy; Esri' },
+    { url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', maxZoom: 19, attribution: '&copy; OSM' }
+  ]},
+  satellite: { providers: [
+    { url: 'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', subdomains: '0123', maxZoom: 20, attribution: '&copy; Google' },
+    { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', maxZoom: 19, attribution: 'Tiles &copy; Esri' }
+  ]},
+  hybrid: { providers: [
+    { url: 'https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', subdomains: '0123', maxZoom: 20, attribution: '&copy; Google' }
+  ]},
+  terrain: { providers: [
+    { url: 'https://mt{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', subdomains: '0123', maxZoom: 20, attribution: '&copy; Google' },
+    { url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', subdomains: 'abc', maxZoom: 17, attribution: '&copy; OpenTopoMap' }
+  ]},
+  light: { providers: [
+    { url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', subdomains: 'abcd', maxZoom: 19, attribution: '&copy; CARTO' }
+  ]},
+  dark: { providers: [
+    { url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', subdomains: 'abcd', maxZoom: 19, attribution: '&copy; CARTO' }
+  ]}
 };
 
 let currentStyleKey = 'street';
 let activeTileLayer = null;
 let tileCheckTimer = null;
-let providerIdx = 0;
-let allFailedThisStyle = false;
 
 function loadMapStyle(styleKey) {
   currentStyleKey = styleKey;
-  providerIdx = 0;
-  allFailedThisStyle = false;
-  // Reset Google Maps fallback ถ้ามี
-  const fallbackEl = document.getElementById('gmaps-fallback');
-  if (fallbackEl) fallbackEl.remove();
-  document.getElementById('map').style.display = '';
-  window.__useGmapsFallback = false;
-  map.invalidateSize();
-
+  document.querySelectorAll('.style-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.style === styleKey);
+  });
   tryProvider(0);
-  updateStyleSwitcherUI();
 }
 
 function tryProvider(idx) {
   const style = MAP_STYLES[currentStyleKey];
-  if (idx >= style.providers.length) {
-    if (!allFailedThisStyle) {
-      allFailedThisStyle = true;
-      console.error('Style "' + currentStyleKey + '" – all providers failed, using Google Maps embed');
-      switchToGoogleMapsFallback();
-    }
-    return;
-  }
+  if (idx >= style.providers.length) return;
   const cfg = style.providers[idx];
-  console.log('🗺️ [' + style.label + '] Trying provider #' + (idx+1) + ': ' + cfg.name);
-
-  if (activeTileLayer) {
-    map.removeLayer(activeTileLayer);
-    activeTileLayer = null;
-  }
+  if (activeTileLayer) { map.removeLayer(activeTileLayer); activeTileLayer = null; }
+  if (tileCheckTimer) clearTimeout(tileCheckTimer);
 
   const layer = L.tileLayer(cfg.url, {
     attribution: cfg.attribution,
     subdomains: cfg.subdomains || 'abc',
-    maxZoom: cfg.maxZoom
+    maxZoom: cfg.maxZoom,
+    crossOrigin: true
   });
 
-  let loadedCount = 0, errorCount = 0, succeeded = false;
-
-  layer.on('tileload', () => {
-    loadedCount++;
-    if (loadedCount >= 1 && !succeeded) {
-      succeeded = true;
-      clearTimeout(tileCheckTimer);
-      console.log('✅ [' + style.label + '] ' + cfg.name + ' loaded');
-    }
-  });
-
+  let succeeded = false, errorCount = 0;
+  layer.on('tileload', () => { if (!succeeded) { succeeded = true; clearTimeout(tileCheckTimer); } });
   layer.on('tileerror', () => {
     errorCount++;
     if (errorCount >= 4 && !succeeded && activeTileLayer === layer) {
-      console.warn('❌ ' + cfg.name + ' failed, trying next...');
       clearTimeout(tileCheckTimer);
       activeTileLayer = null;
       map.removeLayer(layer);
       tryProvider(idx + 1);
     }
   });
-
   tileCheckTimer = setTimeout(() => {
     if (!succeeded && activeTileLayer === layer) {
-      console.warn('⏱️ ' + cfg.name + ' timeout, trying next...');
       activeTileLayer = null;
       map.removeLayer(layer);
       tryProvider(idx + 1);
     }
-  }, 5000);
+  }, 6000);
 
   layer.addTo(map);
   activeTileLayer = layer;
 }
 
-function updateStyleSwitcherUI() {
-  document.querySelectorAll('.style-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.style === currentStyleKey);
-  });
-}
-
-// Ultimate fallback: ถ้า tile ทุกตัว block หมด ใช้ Google Maps embed iframe แทน
-function switchToGoogleMapsFallback() {
-  // Hide Leaflet map
-  document.getElementById('map').style.display = 'none';
-
-  // Create fallback container
-  const mainEl = document.querySelector('main');
-  const fallback = document.createElement('div');
-  fallback.id = 'gmaps-fallback';
-  fallback.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;background:#fff';
-
-  const notice = document.createElement('div');
-  notice.style.cssText = 'background:#fff8e1;border-bottom:1px solid #f5a623;padding:10px 16px;font-size:12px;color:#8a6500;display:flex;align-items:center;gap:8px';
-  notice.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> เครือข่ายของคุณ block tile server ของแผนที่ — ใช้ Google Maps แทน · คลิกสาขาด้านซ้ายเพื่อเปิดดูตำแหน่ง';
-
-  const iframe = document.createElement('iframe');
-  iframe.id = 'gmaps-iframe';
-  iframe.style.cssText = 'width:100%;flex:1;border:0';
-  iframe.allowFullscreen = true;
-  iframe.loading = 'lazy';
-  iframe.referrerPolicy = 'no-referrer-when-downgrade';
-  // Default view: ภาพรวมประเทศไทย แสดงสาขาแรก
-  iframe.src = 'https://www.google.com/maps?q=' + BRANCHES[0].lat + ',' + BRANCHES[0].lng + '&z=11&output=embed';
-
-  fallback.appendChild(notice);
-  fallback.appendChild(iframe);
-  mainEl.appendChild(fallback);
-
-  // Override the click-to-fly behavior to update iframe instead
-  window.__useGmapsFallback = true;
-}
-
 loadMapStyle('street');
 
-// Custom pin maker
-function makePin(color, isActive = false) {
-  const size = isActive ? 36 : 30;
-  const svg = `
-  <svg width="${size}" height="${size * 1.3}" viewBox="0 0 30 39" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <filter id="sh" x="-50%" y="-50%" width="200%" height="200%">
-        <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.3"/>
-      </filter>
-    </defs>
-    <path d="M15 0C6.7 0 0 6.7 0 15c0 11 15 24 15 24s15-13 15-24C30 6.7 23.3 0 15 0z"
-          fill="${color}" filter="url(#sh)"/>
-    <circle cx="15" cy="15" r="6" fill="#fff"/>
-    <circle cx="15" cy="15" r="3" fill="${color}"/>
-  </svg>`;
+setTimeout(() => map.invalidateSize(), 200);
+window.addEventListener('resize', () => { setTimeout(() => map.invalidateSize(), 100); });
+window.addEventListener('orientationchange', () => { setTimeout(() => map.invalidateSize(), 300); });
 
+function makePinIcon(rank, isNearest) {
+  const bg = isNearest ? '#FF6B1A' : '#0E0E10';
+  const txt = isNearest ? '#FFFFFF' : '#FFC400';
+  const ring = isNearest ? '#FFFFFF' : '#FFC400';
   return L.divIcon({
     className: 'pin-icon',
-    html: svg,
-    iconSize: [size, size * 1.3],
-    iconAnchor: [size / 2, size * 1.3]
+    html: `<div style="position:relative;width:34px;height:44px;">
+      <svg width="34" height="44" viewBox="0 0 36 46" xmlns="http://www.w3.org/2000/svg">
+        <path d="M18 0 C8 0 0 8 0 18 C0 30 18 46 18 46 C18 46 36 30 36 18 C36 8 28 0 18 0 Z" fill="${bg}" stroke="${ring}" stroke-width="2"/>
+        <circle cx="18" cy="17" r="11" fill="${txt}"/>
+        <text x="18" y="21" text-anchor="middle" font-family="Plus Jakarta Sans, sans-serif" font-weight="800" font-size="12" fill="${bg}">${rank}</text>
+      </svg>
+    </div>`,
+    iconSize: [34, 44],
+    iconAnchor: [17, 44],
+    popupAnchor: [0, -40]
   });
 }
 
-// Build popup HTML
-function popupHTML(b) {
-  const zone = ZONES[b.zone];
-  const gMaps = `https://www.google.com/maps/search/?api=1&query=${b.lat},${b.lng}`;
-  const aMaps = `https://maps.apple.com/?q=${encodeURIComponent('Wash&Go ' + b.name)}&ll=${b.lat},${b.lng}`;
-
-  return `
-    <div class="popup">
-      <div class="popup-head">
-        <div class="popup-zone-tag">
-          <span class="pdot" style="background:${zone.color}"></span>
-          ${zone.short}
-        </div>
-        <div class="popup-name">Wash&amp;Go · ${b.name}</div>
-      </div>
-      <div class="popup-body">
-        <div class="popup-landmark">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
-            <circle cx="12" cy="10" r="3"/>
-          </svg>
-          <span>${b.landmark}</span>
-        </div>
-        <div class="popup-coord">${b.lat.toFixed(5)}, ${b.lng.toFixed(5)}</div>
-        <div class="popup-actions">
-          <a class="popup-btn google" href="${gMaps}" target="_blank" rel="noopener">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18 15 12 9 6"/></svg>
-            Google
-          </a>
-          <a class="popup-btn apple" href="${aMaps}" target="_blank" rel="noopener">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18 15 12 9 6"/></svg>
-            Apple
-          </a>
-        </div>
-      </div>
-    </div>`;
+function makeUserIcon() {
+  return L.divIcon({
+    className: 'user-pin',
+    html: `<div style="position:relative;width:48px;height:48px;display:flex;align-items:center;justify-content:center;">
+      <div style="position:absolute;width:48px;height:48px;background:#FF6B1A;border-radius:50%;opacity:0.25;animation:userPulse 2s infinite;"></div>
+      <div style="position:absolute;width:32px;height:32px;background:#FF6B1A;border-radius:50%;opacity:0.4;animation:userPulse 2s infinite 0.4s;"></div>
+      <div style="position:relative;width:18px;height:18px;background:#FF6B1A;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.4);z-index:2;"></div>
+    </div>
+    <style>@keyframes userPulse{0%{transform:scale(0.5);opacity:0.5;}100%{transform:scale(1.5);opacity:0;}}</style>`,
+    iconSize: [48, 48],
+    iconAnchor: [24, 24]
+  });
 }
 
-// Place markers
-BRANCHES.forEach((b, i) => {
-  const m = L.marker([b.lat, b.lng], { icon: makePin(ZONES[b.zone].color) })
-    .addTo(map)
-    .bindPopup(popupHTML(b), { closeButton: true, maxWidth: 280, minWidth: 260 });
+function haversine(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
+  return R * 2 * Math.asin(Math.sqrt(a));
+}
 
-  m.on('click', () => {
-    setActiveBranch(i);
-  });
-  markers[i] = m;
-});
+function formatDist(km) {
+  if (km < 1) return Math.round(km * 1000) + ' ม.';
+  if (km < 10) return km.toFixed(1) + ' กม.';
+  return Math.round(km) + ' กม.';
+}
 
-// ============ SIDEBAR RENDERING ============
-const chipsEl = document.getElementById('chips');
-const listEl  = document.getElementById('list');
+function findArea(query) {
+  const q = query.trim().toLowerCase();
+  if (!q) return null;
+  for (const a of AREAS) {
+    for (const k of a.keys) {
+      if (k.toLowerCase() === q) return a;
+    }
+  }
+  for (const a of AREAS) {
+    for (const k of a.keys) {
+      if (k.toLowerCase().includes(q) || q.includes(k.toLowerCase())) return a;
+    }
+  }
+  return null;
+}
 
-function renderChips() {
-  const all = `
-    <button class="chip ${activeZone === 'all' ? 'active' : ''}" data-zone="all">
-      <span class="dot" style="--zone-color:#0070c9; background:#0070c9"></span>
-      ทั้งหมด <span style="opacity:.6">${BRANCHES.length}</span>
-    </button>`;
-  const items = Object.entries(ZONES).map(([key, z]) => {
-    const count = BRANCHES.filter(b => b.zone === key).length;
-    return `
-      <button class="chip ${activeZone === key ? 'active' : ''}" data-zone="${key}">
-        <span class="dot" style="background:${z.color}"></span>
-        ${z.short} <span style="opacity:.6">${count}</span>
-      </button>`;
-  }).join('');
-  chipsEl.innerHTML = all + items;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
 
-  chipsEl.querySelectorAll('.chip').forEach(c => {
-    c.addEventListener('click', () => {
-      activeZone = c.dataset.zone;
-      renderChips();
+function renderZoneBar() {
+  const counts = { all: BRANCHES.length };
+  Object.keys(ZONES).forEach(z => counts[z] = 0);
+  BRANCHES.forEach(b => counts[b.zone]++);
+
+  const wrap = document.getElementById('zoneBar');
+  wrap.innerHTML = '';
+
+  const all = document.createElement('button');
+  all.className = 'zone-tab' + (activeZone === 'all' ? ' active' : '');
+  all.innerHTML = `<span class="zone-emoji">🌐</span><span>ทั้งหมด</span><span class="zone-count">${counts.all}</span>`;
+  all.onclick = () => { activeZone = 'all'; renderZoneBar(); renderList(); applyFilter(); };
+  wrap.appendChild(all);
+
+  Object.entries(ZONES).forEach(([key, z]) => {
+    if (counts[key] === 0) return;
+    const btn = document.createElement('button');
+    btn.className = 'zone-tab' + (activeZone === key ? ' active' : '');
+    btn.innerHTML = `<span class="zone-emoji">${z.emoji}</span><span>${z.tab}</span><span class="zone-count">${counts[key]}</span>`;
+    btn.onclick = () => {
+      activeZone = key;
+      renderZoneBar();
       renderList();
       applyFilter();
-    });
+      btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    };
+    wrap.appendChild(btn);
   });
+}
+
+function renderQuickChips() {
+  const wrap = document.getElementById('quickAreas');
+  wrap.innerHTML = '';
+  QUICK_AREAS.forEach(name => {
+    const btn = document.createElement('button');
+    btn.className = 'quick-chip';
+    btn.textContent = name;
+    btn.onclick = () => {
+      document.getElementById('finder').value = name;
+      runSearch(name);
+    };
+    wrap.appendChild(btn);
+  });
+}
+
+function renderNearbyAreas() {
+  const bar = document.getElementById('nearbyBar');
+  if (!searchContext) {
+    bar.classList.add('hidden');
+    return;
+  }
+  const nearby = AREAS
+    .filter(a => a.name !== searchContext.name)
+    .map(a => ({ ...a, dist: haversine(searchContext.lat, searchContext.lng, a.lat, a.lng) }))
+    .sort((a, b) => a.dist - b.dist)
+    .slice(0, 6);
+
+  if (nearby.length === 0) { bar.classList.add('hidden'); return; }
+
+  bar.classList.remove('hidden');
+  const scroll = document.getElementById('nearbyScroll');
+  scroll.innerHTML = '';
+  nearby.forEach(a => {
+    const chip = document.createElement('button');
+    chip.className = 'nearby-chip';
+    chip.innerHTML = `<span>${a.name}</span><span class="nearby-dist">${formatDist(a.dist)}</span>`;
+    chip.onclick = () => {
+      document.getElementById('finder').value = a.keys[0];
+      runSearch(a.keys[0]);
+      scroll.scrollLeft = 0;
+    };
+    scroll.appendChild(chip);
+  });
+}
+
+function getDisplayBranches() {
+  let list = BRANCHES.map((b, idx) => ({ ...b, idx }));
+  if (activeZone !== 'all') list = list.filter(b => b.zone === activeZone);
+
+  if (searchContext) {
+    list = list.map(b => ({ ...b, distance: haversine(searchContext.lat, searchContext.lng, b.lat, b.lng) }));
+    list.sort((a, b) => a.distance - b.distance);
+  } else {
+    const zoneOrder = ['north','east','west','southbkk','pattaya','south','isan'];
+    list.sort((a, b) => zoneOrder.indexOf(a.zone) - zoneOrder.indexOf(b.zone));
+  }
+  return list;
 }
 
 function renderList() {
-  const filter = (b) => {
-    const matchZone = activeZone === 'all' || b.zone === activeZone;
-    const term = searchTerm.trim().toLowerCase();
-    const matchSearch = !term ||
-      b.name.toLowerCase().includes(term) ||
-      b.landmark.toLowerCase().includes(term) ||
-      ZONES[b.zone].name.toLowerCase().includes(term);
-    return matchZone && matchSearch;
-  };
+  const list = getDisplayBranches();
+  const container = document.getElementById('list');
+  container.innerHTML = '';
 
-  const filtered = BRANCHES
-    .map((b, idx) => ({ ...b, idx }))
-    .filter(filter);
+  document.getElementById('listCount').textContent = list.length;
+  document.getElementById('sortInfo').textContent = searchContext ? '⚡ ใกล้-ไกล' : 'เรียงตามโซน';
 
-  if (filtered.length === 0) {
-    listEl.innerHTML = `<div class="empty">ไม่พบสาขาที่ตรงกับการค้นหา</div>`;
+  if (list.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">ไม่พบสาขาในโซนนี้</div><div class="empty-text">ลองเปลี่ยนโซน หรือล้างตัวกรอง</div></div>`;
     return;
   }
 
-  // Group by zone
-  const grouped = {};
-  filtered.forEach(b => {
-    if (!grouped[b.zone]) grouped[b.zone] = [];
-    grouped[b.zone].push(b);
-  });
+  list.forEach((b, displayIdx) => {
+    const isNearest = searchContext && displayIdx === 0;
+    const isActive = activeBranchIdx === b.idx;
 
-  const order = ['north','east','west','southbkk','pattaya','south','isan'];
-  let html = '';
+    const card = document.createElement('div');
+    card.className = 'card' + (isActive ? ' active' : '') + (isNearest ? ' nearest' : '');
 
-  order.forEach(zk => {
-    if (!grouped[zk]) return;
-    const z = ZONES[zk];
-    html += `
-      <div class="zone-group">
-        <div class="zone-header" style="--zone-color:${z.color}">
-          <span class="bar"></span>
-          ${z.name}
-          <span class="zone-count">${grouped[zk].length}</span>
+    const rankNum = displayIdx + 1;
+    const distHtml = b.distance != null ? `<span class="card-distance">📍 ${formatDist(b.distance)}</span>` : '';
+    const nearestBadge = isNearest ? `<span class="nearest-badge">ใกล้สุด</span>` : '';
+
+    card.innerHTML = `
+      <div class="card-top">
+        <div class="card-rank">${rankNum}</div>
+        <div class="card-body">
+          <div class="card-name">${b.name}</div>
+          <div class="card-landmark">${b.landmark}</div>
+          <div class="card-meta">
+            <span class="card-zone">${ZONES[b.zone].emoji} ${ZONES[b.zone].short}</span>
+            ${distHtml}
+            ${nearestBadge}
+          </div>
         </div>
-        ${grouped[zk].map(b => {
-          const gMaps = `https://www.google.com/maps/search/?api=1&query=${b.lat},${b.lng}`;
-          const aMaps = `https://maps.apple.com/?q=${encodeURIComponent('Wash&Go ' + b.name)}&ll=${b.lat},${b.lng}`;
-          return `
-          <div class="branch ${activeBranchIdx === b.idx ? 'active' : ''}" data-idx="${b.idx}">
-            <div class="branch-pin">
-              <svg viewBox="0 0 30 39" xmlns="http://www.w3.org/2000/svg">
-                <path d="M15 0C6.7 0 0 6.7 0 15c0 11 15 24 15 24s15-13 15-24C30 6.7 23.3 0 15 0z" fill="${z.color}"/>
-                <circle cx="15" cy="15" r="5" fill="#fff"/>
-              </svg>
-            </div>
-            <div class="branch-body">
-              <div class="branch-name">${b.name}</div>
-              <div class="branch-meta">${b.landmark}</div>
-              <div class="branch-actions">
-                <a class="branch-btn google" href="${gMaps}" target="_blank" rel="noopener" onclick="event.stopPropagation()">
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18 15 12 9 6"/></svg>
-                  Google Maps
-                </a>
-                <a class="branch-btn apple" href="${aMaps}" target="_blank" rel="noopener" onclick="event.stopPropagation()">
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18 15 12 9 6"/></svg>
-                  Apple Maps
-                </a>
-              </div>
-            </div>
-          </div>`;
-        }).join('')}
-      </div>`;
-  });
+      </div>
+      <div class="card-actions">
+        <a class="card-action" href="https://www.google.com/maps/search/?api=1&query=${b.lat},${b.lng}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Google</a>
+        <a class="card-action" href="https://maps.apple.com/?ll=${b.lat},${b.lng}&q=${encodeURIComponent(b.name)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Apple</a>
+        <button class="card-action" onclick="event.stopPropagation();window.copyCoord(${b.lat},${b.lng})">📋 พิกัด</button>
+      </div>
+    `;
 
-  listEl.innerHTML = html;
-
-  listEl.querySelectorAll('.branch').forEach(el => {
-    el.addEventListener('click', () => {
-      const idx = parseInt(el.dataset.idx, 10);
-      const b = BRANCHES[idx];
-
-      if (window.__useGmapsFallback) {
-        // Google Maps embed mode
-        const iframe = document.getElementById('gmaps-iframe');
-        if (iframe) {
-          iframe.src = 'https://www.google.com/maps?q=' + b.lat + ',' + b.lng + '&z=17&output=embed';
-        }
-        setActiveBranch(idx);
-      } else {
-        map.flyTo([b.lat, b.lng], 16, { duration: 0.8 });
-        setTimeout(() => markers[idx].openPopup(), 600);
-        setActiveBranch(idx);
-      }
-    });
+    card.onclick = () => focusBranch(b.idx);
+    container.appendChild(card);
   });
 }
 
-function setActiveBranch(idx) {
-  activeBranchIdx = idx;
-  // Update marker icons
-  Object.entries(markers).forEach(([i, m]) => {
-    const b = BRANCHES[i];
-    m.setIcon(makePin(ZONES[b.zone].color, parseInt(i,10) === idx));
+window.copyCoord = function(lat, lng) {
+  const text = `${lat},${lng}`;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => showToast('📋 คัดลอกพิกัดแล้ว')).catch(() => showToast('📋 ' + text));
+  } else {
+    showToast('📋 ' + text);
+  }
+};
+
+function isMobileView() {
+  return document.body.classList.contains('force-mobile') ||
+    (!document.body.classList.contains('force-pc') && window.innerWidth <= 900);
+}
+
+function renderMarkers() {
+  Object.values(markers).forEach(m => map.removeLayer(m));
+  Object.keys(markers).forEach(k => delete markers[k]);
+
+  const list = getDisplayBranches();
+
+  list.forEach((b, displayIdx) => {
+    const isNearest = searchContext && displayIdx === 0;
+    const rank = displayIdx + 1;
+    const marker = L.marker([b.lat, b.lng], { icon: makePinIcon(rank, isNearest) }).addTo(map);
+
+    const distLine = b.distance != null
+      ? `<div style="font-size:11px;color:#FF6B1A;font-weight:700;margin-bottom:6px;">📍 ห่าง ${formatDist(b.distance)} จาก${searchContext.name === 'ตำแหน่งของฉัน' ? 'คุณ' : ' ' + searchContext.name}</div>`
+      : '';
+
+    const popupHtml = `
+      <div class="popup">
+        <div class="popup-zone">${ZONES[b.zone].emoji} ${ZONES[b.zone].short}</div>
+        <div class="popup-title">${b.name}</div>
+        <div class="popup-landmark">${b.landmark}</div>
+        ${distLine}
+        <div class="popup-coord">${b.lat.toFixed(6)}, ${b.lng.toFixed(6)}</div>
+        <div class="popup-actions">
+          <a class="popup-btn primary" href="https://www.google.com/maps/dir/?api=1&destination=${b.lat},${b.lng}" target="_blank" rel="noopener">นำทาง Google</a>
+          <a class="popup-btn secondary" href="https://maps.apple.com/?daddr=${b.lat},${b.lng}" target="_blank" rel="noopener">นำทาง Apple</a>
+        </div>
+      </div>
+    `;
+
+    marker.bindPopup(popupHtml, { maxWidth: 320, className: 'wg-popup' });
+    marker.on('click', () => { activeBranchIdx = b.idx; renderList(); });
+    markers[b.idx] = marker;
   });
-  renderList();
 }
 
 function applyFilter() {
-  BRANCHES.forEach((b, i) => {
-    const visible = activeZone === 'all' || b.zone === activeZone;
-    if (visible) {
-      if (!map.hasLayer(markers[i])) markers[i].addTo(map);
-    } else {
-      if (map.hasLayer(markers[i])) map.removeLayer(markers[i]);
-    }
-  });
+  renderMarkers();
+  const isMobile = isMobileView();
 
-  // Auto-zoom to zone
-  if (activeZone !== 'all') {
-    const points = BRANCHES.filter(b => b.zone === activeZone).map(b => [b.lat, b.lng]);
-    if (points.length === 1) {
-      map.flyTo(points[0], 14, { duration: 0.8 });
-    } else if (points.length > 1) {
-      map.flyToBounds(points, { padding: [60, 60], duration: 0.8, maxZoom: 13 });
+  if (searchContext) {
+    if (userMarker) map.removeLayer(userMarker);
+    userMarker = L.marker([searchContext.lat, searchContext.lng], { icon: makeUserIcon(), zIndexOffset: 1000 }).addTo(map);
+    userMarker.bindPopup(`<div style="padding:8px 12px;font-weight:700;font-size:13px;">📍 ${searchContext.name}</div>`);
+
+    const list = getDisplayBranches().slice(0, 3);
+    const bounds = L.latLngBounds([[searchContext.lat, searchContext.lng]]);
+    list.forEach(b => bounds.extend([b.lat, b.lng]));
+    if (isMobile) {
+      map.fitBounds(bounds, { paddingTopLeft: [40, 40], paddingBottomRight: [40, 220], maxZoom: 14 });
+    } else {
+      map.fitBounds(bounds, { padding: [80, 80], maxZoom: 14 });
     }
   } else {
-    resetView();
+    if (userMarker) { map.removeLayer(userMarker); userMarker = null; }
+    if (activeZone !== 'all') {
+      const list = getDisplayBranches();
+      if (list.length > 0) {
+        const bounds = L.latLngBounds(list.map(b => [b.lat, b.lng]));
+        if (isMobile) {
+          map.fitBounds(bounds, { paddingTopLeft: [30, 30], paddingBottomRight: [30, 220], maxZoom: 13 });
+        } else {
+          map.fitBounds(bounds, { padding: [60, 60], maxZoom: 13 });
+        }
+      }
+    } else {
+      map.setView([13.75, 100.55], 11);
+    }
   }
 }
 
-function resetView() {
-  // Bangkok metro fits most branches
-  map.flyTo([13.78, 100.55], 10, { duration: 0.8 });
+function focusBranch(idx) {
+  activeBranchIdx = idx;
+  const b = BRANCHES[idx];
+  const isMobile = isMobileView();
+  if (isMobile) collapseSheet();
+
+  if (isMobile) {
+    const targetPoint = map.project([b.lat, b.lng], 16).subtract([0, -80]);
+    const targetLatLng = map.unproject(targetPoint, 16);
+    map.flyTo(targetLatLng, 16, { duration: 0.6 });
+  } else {
+    map.flyTo([b.lat, b.lng], 16, { duration: 0.7 });
+  }
+
+  setTimeout(() => { if (markers[idx]) markers[idx].openPopup(); }, isMobile ? 700 : 750);
+  renderList();
 }
 
-// ============ EVENTS ============
-document.getElementById('search').addEventListener('input', (e) => {
-  searchTerm = e.target.value;
+function runSearch(query) {
+  const area = findArea(query);
+  if (!area) { showToast('❌ ไม่พบย่าน "' + query + '"'); return; }
+  searchContext = { type: 'area', name: area.name, lat: area.lat, lng: area.lng };
+  showContext();
+  activeZone = 'all';
+  renderZoneBar();
+  renderNearbyAreas();
   renderList();
+  applyFilter();
+  showToast('🎯 พบสาขาใกล้ ' + area.name);
+}
+
+function showContext() {
+  const bar = document.getElementById('contextBar');
+  if (searchContext) {
+    bar.classList.remove('hidden');
+    document.getElementById('contextValue').textContent = searchContext.name;
+  } else {
+    bar.classList.add('hidden');
+  }
+}
+
+function clearSearch() {
+  searchContext = null;
+  document.getElementById('finder').value = '';
+  showContext();
+  renderNearbyAreas();
+  renderList();
+  applyFilter();
+}
+
+function useGPS() {
+  if (!navigator.geolocation) { showToast('❌ เบราว์เซอร์ไม่รองรับ GPS'); return; }
+  const btn = document.getElementById('gpsBtn');
+  btn.classList.add('loading');
+  const originalHTML = btn.innerHTML;
+  btn.innerHTML = '<span style="font-size:10px">กำลังหา...</span>';
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      searchContext = { type: 'gps', name: 'ตำแหน่งของฉัน', lat: pos.coords.latitude, lng: pos.coords.longitude };
+      document.getElementById('finder').value = '📍 ตำแหน่งของฉัน';
+      showContext();
+      activeZone = 'all';
+      renderZoneBar();
+      renderNearbyAreas();
+      renderList();
+      applyFilter();
+      showToast('✅ ใช้ตำแหน่งจริง');
+      btn.classList.remove('loading');
+      btn.innerHTML = originalHTML;
+    },
+    () => {
+      showToast('❌ ไม่สามารถหาตำแหน่งได้');
+      btn.classList.remove('loading');
+      btn.innerHTML = originalHTML;
+    },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+}
+
+const finderInput = document.getElementById('finder');
+finderInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && finderInput.value.trim()) {
+    finderInput.blur();
+    runSearch(finderInput.value.trim());
+  }
 });
+
+document.getElementById('gpsBtn').addEventListener('click', useGPS);
+document.getElementById('clearContext').addEventListener('click', clearSearch);
 
 document.getElementById('resetView').addEventListener('click', () => {
   activeZone = 'all';
-  searchTerm = '';
-  document.getElementById('search').value = '';
+  searchContext = null;
+  document.getElementById('finder').value = '';
+  showContext();
+  renderNearbyAreas();
   activeBranchIdx = null;
-  renderChips();
+  renderZoneBar();
   renderList();
   applyFilter();
+  map.setView([13.75, 100.55], 11);
 });
 
-// Style switcher
 const styleSwitcher = document.getElementById('styleSwitcher');
 const styleToggle = document.getElementById('styleToggle');
-
 styleToggle.addEventListener('click', (e) => {
   e.stopPropagation();
   styleSwitcher.classList.toggle('open');
 });
-
 document.addEventListener('click', (e) => {
-  if (!styleSwitcher.contains(e.target)) {
-    styleSwitcher.classList.remove('open');
-  }
+  if (!styleSwitcher.contains(e.target)) styleSwitcher.classList.remove('open');
 });
-
 document.querySelectorAll('.style-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const styleKey = btn.dataset.style;
@@ -1440,10 +1794,108 @@ document.querySelectorAll('.style-btn').forEach(btn => {
   });
 });
 
+// ============ MOBILE BOTTOM SHEET ============
+const sidebar = document.getElementById('sidebar');
+const handle = document.getElementById('sheetHandle');
+const fab = document.getElementById('mobileFab');
+const appEl = document.querySelector('.app');
+
+function expandSheet() {
+  sidebar.classList.remove('collapsed');
+  appEl.classList.remove('sheet-collapsed');
+  setTimeout(() => map.invalidateSize(), 320);
+}
+
+function collapseSheet() {
+  sidebar.classList.add('collapsed');
+  appEl.classList.add('sheet-collapsed');
+  setTimeout(() => map.invalidateSize(), 320);
+}
+
+handle.addEventListener('click', () => {
+  if (sidebar.classList.contains('collapsed')) expandSheet();
+  else collapseSheet();
+});
+
+let dragStartY = null;
+handle.addEventListener('touchstart', (e) => {
+  dragStartY = e.touches[0].clientY;
+  sidebar.style.transition = 'none';
+}, { passive: true });
+
+handle.addEventListener('touchmove', (e) => {
+  if (dragStartY == null) return;
+  const dy = e.touches[0].clientY - dragStartY;
+  if (sidebar.classList.contains('collapsed') && dy < 0) {
+    sidebar.style.transform = '';
+  } else if (!sidebar.classList.contains('collapsed') && dy > 0) {
+    // allow visual drag
+  }
+}, { passive: true });
+
+handle.addEventListener('touchend', (e) => {
+  if (dragStartY == null) return;
+  const endY = e.changedTouches[0].clientY;
+  const dy = endY - dragStartY;
+  sidebar.style.transition = '';
+  sidebar.style.transform = '';
+  if (sidebar.classList.contains('collapsed') && dy < -50) expandSheet();
+  else if (!sidebar.classList.contains('collapsed') && dy > 80) collapseSheet();
+  dragStartY = null;
+});
+
+if (fab) fab.addEventListener('click', expandSheet);
+
+finderInput.addEventListener('focus', () => {
+  if (isMobileView() && sidebar.classList.contains('collapsed')) expandSheet();
+});
+
+// ============ MODE TOGGLE (Auto / PC / Mobile) ============
+const MODE_KEY = 'wg-display-mode';
+let currentMode = localStorage.getItem(MODE_KEY) || 'auto';
+
+function applyMode(mode) {
+  currentMode = mode;
+  localStorage.setItem(MODE_KEY, mode);
+  document.body.classList.remove('force-pc', 'force-mobile');
+
+  if (mode === 'pc') document.body.classList.add('force-pc');
+  else if (mode === 'mobile') document.body.classList.add('force-mobile');
+  // 'auto' = no class, lets media query decide
+
+  document.querySelectorAll('.mode-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === mode);
+  });
+
+  // Reset sheet state per mode
+  if (mode === 'pc') {
+    sidebar.classList.remove('collapsed');
+    appEl.classList.remove('sheet-collapsed');
+  } else {
+    // mobile or auto-on-small-screen: collapse by default
+    if (mode === 'mobile' || window.innerWidth <= 900) {
+      sidebar.classList.add('collapsed');
+      appEl.classList.add('sheet-collapsed');
+    } else {
+      sidebar.classList.remove('collapsed');
+      appEl.classList.remove('sheet-collapsed');
+    }
+  }
+
+  setTimeout(() => map.invalidateSize(), 350);
+}
+
+document.querySelectorAll('.mode-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    applyMode(b.dataset.mode);
+    showToast(b.dataset.mode === 'auto' ? '🔄 โหมดอัตโนมัติ' : b.dataset.mode === 'pc' ? '🖥️ โหมด PC' : '📱 โหมดมือถือ');
+  });
+});
+
+// Apply saved mode on load
+applyMode(currentMode);
+
 // ============ INIT ============
-// Update stats
-document.getElementById('stat-total').textContent = BRANCHES.length;
-document.getElementById('stat-zones').textContent = Object.keys(ZONES).length;
 const provinces = new Set();
 BRANCHES.forEach(b => {
   if (b.zone === 'south') provinces.add('สงขลา');
@@ -1451,12 +1903,23 @@ BRANCHES.forEach(b => {
   else if (b.zone === 'pattaya') provinces.add('ชลบุรี');
   else provinces.add('กรุงเทพฯ-ปริมณฑล');
 });
-document.getElementById('stat-prov').textContent = provinces.size;
+document.getElementById('stat-total').textContent = BRANCHES.length;
+document.getElementById('stat-zones').textContent = Object.keys(ZONES).length;
 
-renderChips();
+renderZoneBar();
+renderQuickChips();
 renderList();
+renderMarkers();
 
-} // end initApp
+setTimeout(() => {
+  const loading = document.getElementById('loading');
+  loading.classList.add('hide');
+  setTimeout(() => loading.style.display = 'none', 400);
+  setTimeout(() => map.invalidateSize(), 500);
+}, 600);
+
+}
+});
 </script>
 </body>
 </html>
